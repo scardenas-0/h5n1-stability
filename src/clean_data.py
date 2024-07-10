@@ -13,6 +13,7 @@ import polars as pl
 
 def parse_plate(
     excel_file: str,
+    sheet_name: str,
     plate_header_row: int,
     plate_metadata_row: int = None,
     plate_n_rows: int = 8,
@@ -43,6 +44,7 @@ def parse_plate(
     """
     plate = pd.read_excel(
         excel_file,
+        sheet_name=sheet_name,
         skiprows=0,
         header=plate_header_row,
         nrows=plate_n_rows,
@@ -52,6 +54,7 @@ def parse_plate(
     if plate_metadata_row is not None:
         metadata = pd.read_excel(
             excel_file,
+            sheet_name=sheet_name,
             skiprows=plate_metadata_row,
             nrows=1,
             header=None,
@@ -301,6 +304,8 @@ def parse_temperature_to_celsius(
         )
     return float(value) * conversion
 
+def find_first_data():
+    pass
 
 def parse_titration_data(
     excel_file: str,
@@ -308,6 +313,7 @@ def parse_titration_data(
     metadata_row_offset: int,
     sample_id_prefix: str = "sample",
     temperature: str = None,
+    medium: str = None,
     verbose: bool = False,
     **kwargs
 ) -> pl.DataFrame:
@@ -331,7 +337,7 @@ def parse_titration_data(
         (This differs among datasheets,
         but it is typically 0 (same row)
         or 1 (one row above)
-
+        
     sample_id_prefix : str
         Prefix for the string sample unique ids. Default
         "sample".
@@ -346,6 +352,9 @@ def parse_titration_data(
         as a string parseable by parse_temperature_to_celsius().
         Otherwise, will attempt to parse temperature
         metadata from plate header rows.
+        
+    medium : str
+        Medium for all data in the sheet        
 
     **kwargs :
         Additional keyword arguments passed to
@@ -360,59 +369,69 @@ def parse_titration_data(
     ------
     A ValueError if validation fails.
     """
-    results = [None] * len(plate_header_rows)
+    
+    sheet_results =  [None] * len(excel_file.sheet_names)
+    for i_sheet, sheet_name in enumerate(excel_file.sheet_names):
+        
+        first_data_row = find_first_data(pd.read_excel(excel_file, sheet_name=sheet_name))
+        
+        plate_header_rows = first_data_row + plate_header_rows
+    
+        results = [None] * len(plate_header_rows)
+        for i_plate, header_row in enumerate(plate_header_rows):
+            if verbose:
+                print("Parsing plate {}".format(i_plate))
+            metadata_row = header_row + metadata_row_offset
+            plate, meta = parse_plate(
+                excel_file,
+                sheet_name,
+                plate_header_row=header_row,
+                plate_metadata_row=metadata_row,
+                **kwargs
+            )
 
-    for i_plate, header_row in enumerate(
-        plate_header_rows
-    ):
-        if verbose:
-            print("Parsing plate {}".format(i_plate))
-        metadata_row = header_row + metadata_row_offset
-        plate, meta = parse_plate(
-            excel_file,
-            plate_header_row=header_row,
-            plate_metadata_row=metadata_row,
-            **kwargs
-        )
+            if verbose:
+                print("Parsed plate:")
+                print(plate)
+                print("Parsed metadata:")
+                print(meta)
 
-        if verbose:
-            print("Parsed plate:")
-            print(plate)
-            print("Parsed metadata:")
-            print(meta)
-
-        if temperature is None:
-            timepoint = meta.iloc[0][0].strip()
-            temp = meta.iloc[0][1].strip()
-        else:
-            timepoint = meta.iloc[0][0].strip()
-            temp = temperature
-            # some sheets do not explicitly name
-            # the temparture, others do.
-        plate = clean_single_plate(plate).with_columns(
-            timepoint_minutes=pl.lit(
-                parse_duration_to_minutes(timepoint)
-            ),
-            temperature_celsius=pl.lit(
-                parse_temperature_to_celsius(temp)
-            ),
-            sample_id=(
-                pl.lit(
-                    "{}-t{}-{}-rep".format(
-                        sample_id_prefix,
-                        temp.replace(" ", "-"),
-                        timepoint.replace(" ", "-"),
+            # check timepoint
+            if temperature is None:
+                timepoint = meta.iloc[0][0].strip()
+                temp = sheet_name.split()[0]
+            else:
+                timepoint = meta.iloc[0][0].strip()
+                temp = temperature
+                
+            if medium is None: med = sheet_name.split()[1]
+            else: med = medium
+            
+            plate = clean_single_plate(plate).with_columns(
+                timepoint_minutes=pl.lit(
+                    parse_duration_to_minutes(timepoint)
+                ),
+                temperature_celsius=pl.lit(
+                    parse_temperature_to_celsius(temp)
+                ),
+                medium=med,
+                sample_id=(
+                    pl.lit(
+                        "{}-t{}-{}-rep".format(
+                            sample_id_prefix,
+                            temp.replace(" ", "-"),
+                            timepoint.replace(" ", "-"),
+                        )
                     )
-                )
-                + pl.col("replicate").cast(pl.Utf8)
-            ),
-        )
-        results[i_plate] = plate
+                    + pl.col("replicate").cast(pl.Utf8)
+                ),
+            )
+            results[i_plate] = plate
 
-    all_results = pl.concat(results)
-    validate_longform_data(all_results)
+        sheet_results[i_sheet] = pl.concat(results)
+        validate_longform_data(sheet_results[i_sheet])
+    all_results = pl.concat(sheet_results)
     return all_results
-
 
 def main(
     # excel_file_path_63C_and_pilot: str,
@@ -455,56 +474,55 @@ def main(
     None
     """
     # constants not encoded in the raw data sheet
-    virus_name = "H5N1_mountain_lion_isolate"
+    # virus_name = "H5N1_mountain_lion_isolate" # fix
     # virus_name = "H5N1_cow_isolate"
-    medium_name = "milk"
+    medium_name = "milk" # fix
     # medium_name = "wastewater"
-    well_volume = 0.1
-    sample_id_prefix = "{}-{}".format(
-        virus_name, medium_name
-    )
-    usecols = "A:N"
+    well_volume = 0.1 # check
+    # sample_id_prefix = "{}-{}".format(
+    #     virus_name, medium_name) # fix
+    usecols = "A:N" # good
+    
+    # write script to work with xlsx sheets
 
-    parsed_63 = (
-        parse_titration_data(
-            excel_file_path_63C_and_pilot,
-            [7 + 11 * x for x in range(13)],
-            -1,
-            sample_id_prefix=sample_id_prefix,
+    parsed_milk = parse_titration_data(
+            excel_file_path_milk,
+            plate_header_rows=[11 * x for x in range(10)],
+            metadata_row_offset=-1, # check ?
+            sample_id_prefix="{}-{}".format(
+        "H5N1_cow_isolate", "milk"
+    ),
+            medium="milk",
             usecols=usecols,
-        )
-        .filter(
-            pl.col("timepoint_minutes")
-            > 0
-            # do not use 0 timepoint for 63C
-            # as it is before ramp-up
-        )
-        .with_columns(is_pilot=pl.lit(False))
-    )
+    ).with_columns(is_pilot=pl.lit(False),
+                   medium = "milk")
 
-    parsed_72_pilot = parse_titration_data(
-        excel_file_path_63C_and_pilot,
-        [
-            153 + 11 * x for x in range(8)
-        ],  # 72C pilot experiment
+    parsed_surface = parse_titration_data(
+        excel_file_path_surface,
+        [153 + 11 * x for x in range(8)],
         -1,
-        sample_id_prefix=sample_id_prefix + "-pilot",
+        sample_id_prefix="{}-".format(
+        "H5N1_mountain_lion_isolate"
+    ),
         usecols=usecols,
     ).with_columns(is_pilot=pl.lit(True))
 
-    parsed_72 = parse_titration_data(
-        excel_file_path_72C,
+    parsed_wastewater = parse_titration_data(
+        excel_file_path_wastewater,
         [19 + 11 * x for x in range(7)],
         -1,
-        sample_id_prefix=sample_id_prefix,
+        sample_id_prefix="{}-".format(
+        "H5N1_mountain_lion_isolate"
+        ),
         usecols=usecols,
-        temperature="72C",
+        temperature="4C",
     ).with_columns(is_pilot=pl.lit(False))
 
     parsed = pl.concat(
-        [parsed_63, parsed_72, parsed_72_pilot]
+        [parsed_milk, parsed_surface, parsed_wastewater]
     )
-
+    ## stop here
+    
     # filter out wells that weren't used
     # and add metadata
     dat = (
