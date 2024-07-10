@@ -12,6 +12,8 @@ If you use the code or data provided here, please make sure to do so in light of
 
 Bibtex record:
 ```
+..
+```
 
 ## Directories
 - `src`: all code, including data cleaning, Bayesian inference, and figure generation.
