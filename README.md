@@ -1,33 +1,16 @@
-# Inactivation rate of highly pathogenic avian influenza H5N1 virus (clade 2.3.4.4b) in raw milk at 63 and 72 degrees Celsius.
+# Stability of H5N1 virus in raw milk
 
 Franziska Kaiser, Dylan H. Morris, Arthur Wickenhagen, Reshma Mukesh, Shane Gallogly, Kwe Claude Yinda, Emmie de Wit, James O. Lloyd-Smith, Vincent J. Munster
 
 
 ## Repository information
-This repository accompanies the article "Inactivation rate of highly pathogenic avian influenza H5N1 virus (clade 2.3.4.4b) in raw milk at 63 and 72 degrees Celsius" (F Kaiser, DH Morris et al.). It provides code for reproducing Bayesian inference analyses from the paper and producing display figures.
+This repository accompanies the article "" (F Kaiser, DH Morris et al.). It provides code for reproducing Bayesian inference analyses from the paper and producing display figures.
 
 
 ## License and citation information
 If you use the code or data provided here, please make sure to do so in light of the project [license](LICENSE) and please cite our work as below:
 
-- F. Kaiser, D.H. Morris, et al. Inactivation rate of highly pathogenic avian influenza H5N1 virus (clade 2.3.4.4b) in raw milk at 63 and 72 degrees Celsius. *in press* May 2024.
-
 Bibtex record:
-```
-@article{kaiser2024inactivationh5n1,
-  title={Inactivation rate of highly pathogenic avian influenza {H5N1} virus (clade 2.3.4.4b) in raw milk at 63 and 72 degrees {Celsius}},
-  author={Kaiser, Franziska and
-          Morris, Dylan H. and
-		  Wickenhagen, Arthur and
-		  Mukesh, Reshma and
-		  Gallogly, Shane and
-		  Yinda, Kwe Claude and
-		  de Wit, Emmie and
-		  Lloyd-Smith, James O. and
-		  Munster, Vincent J.},
-  journal={in press},
-  year={2024},
-}
 ```
 
 ## Directories
@@ -46,7 +29,7 @@ You will also need a working $\TeX$ installation to render the text for the figu
 ## Getting the code
 First download the code. The recommended way is to ``git clone`` our Github repository from the command line:
 
-    git clone https://github.com/LloydSmithLab/h5n1-inactivation.git
+    git clone https://github.com/scardenas-0/h5n1-stability.git
 
 Downloading it manually via Github's download button should also work.
 
