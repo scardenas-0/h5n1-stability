@@ -159,6 +159,10 @@ $(DIAGNOSTICS)/%_extrema.tsv: $(SRC)/table_diagnostic_extrema.py \
 
 ALL_TARGETS := $(CLEANED_DATA) $(ALL_CHAINS) $(ALL_FIGURES) $(ALL_TABLES)
 all: $(ALL_TARGETS)
+data: $(CLEANED_DATA)
+chains: $(ALL_CHAINS)
+figures: $(ALL_FIGURES)
+tables: $(ALL_TABLES)
 
 ##########################
 # Phony rules / shortcuts
@@ -201,7 +205,3 @@ list_tables:
 list_targets:
 > $(ECHO) $(ALL_TARGETS)
 
-data: $(CLEANED_DATA)
-chains: $(ALL_CHAINS)
-figures: $(ALL_FIGURES)
-tables: $(ALL_TABLES)

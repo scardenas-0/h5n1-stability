@@ -13,6 +13,7 @@ import polars as pl
 
 def parse_plate(
     excel_file: str,
+    sheet_name: str,
     plate_header_row: int,
     plate_metadata_row: int = None,
     plate_n_rows: int = 8,
@@ -43,6 +44,7 @@ def parse_plate(
     """
     plate = pd.read_excel(
         excel_file,
+        sheet_name=sheet_name,
         skiprows=0,
         header=plate_header_row,
         nrows=plate_n_rows,
@@ -52,6 +54,7 @@ def parse_plate(
     if plate_metadata_row is not None:
         metadata = pd.read_excel(
             excel_file,
+            sheet_name=sheet_name,
             skiprows=plate_metadata_row,
             nrows=1,
             header=None,
@@ -171,25 +174,30 @@ def clean_single_plate(
     plate = plate.drop(
         ["n_positive_wells"]
     ).with_row_index("minus_log10_dilution")
-    plate_long = (
-        plate.melt(
+
+    negative_strings = ["-", "", "negative", None]
+    
+    plate_long = (plate.melt(
             id_vars=["minus_log10_dilution", "well_row"],
             value_name="well_status",
             variable_name="well_column",
         )
-        .with_columns(
+                  .with_columns(
+            well_status = pl.col("well_status").cast(
+                pl.String
+            )
+        )
+                  .with_columns(
             well_status=pl.when(
                 pl.col("well_status") == "+"
             )
             .then(pl.lit(True))
-            .when(pl.col("well_status") == "-")
-            .then(pl.lit(False))
-            .otherwise(None),
+            .otherwise(False),
             well_column=pl.col("well_column").cast(
                 pl.Int32
-            ),
-        )
-        .with_columns(
+            )
+            )
+                  .with_columns(
             replicate=((pl.col("well_column") - 1) / 4)
             .floor()
             .cast(pl.Int32)
@@ -199,36 +207,36 @@ def clean_single_plate(
                     pl.Int32
                 )
             ),
-        )
-    )
+    ))
+    # print(plate_long)
 
     validate_longform_data(plate_long)
 
     return plate_long
 
 
-def parse_duration_to_minutes(duration_raw: str) -> float:
+def parse_duration_to_hours(duration_raw: str) -> float:
     """
     Parse a duration string in the form
-    '<number><3 letter unit>', stripping away
+    '<number><1 letter unit>', stripping away
     any whitespace, return the duration value
-    as a float in units of minutes.
+    as a float in units of hours.
     As this function is specific to cleaning a
-    particular dataset, 'min'` and `'sec' are the
+    particular dataset, 'h'` and `'d' are the
     only parseable input units.
 
     Parameters
     ----------
     duration_raw : str
         Duration string in the form
-        '<number><3 letter unit>', potentially with leading
+        '<number><1 letter unit>', potentially with leading
         and/or trailing whitespace, and potentially with
         whitespace between the duration and the unit. Valid examples
-        include: '30 sec', '1sec' '52   sec ', ' 5 min ', and ' 22min'.
+        include: '24h', '3d', '6   h ', ' 5 d ', and ' 22h'.
 
     Returns
     -------
-    The parsed duration as a float in units of minutes.
+    The parsed duration as a float in units of hours.
 
     Raises
     ------
@@ -237,21 +245,20 @@ def parse_duration_to_minutes(duration_raw: str) -> float:
     cannot be coerced to a float.
     """
     duration_stripped = duration_raw.strip()
-    unit = duration_stripped[-3:]
-    value = duration_stripped[:-3]
+    unit = duration_stripped[-1]
+    value = duration_stripped[:-1]
 
-    conversions = {"min": 1, "sec": 1 / 60.0}
+    conversions = {"h": 1, "d": 24.0}
 
     conversion = conversions.get(unit, None)
     if conversion is None:
         raise ValueError(
-            "Unknown string format for timepoint; could not parse {}"
+            "Unknown string format for timepoint; could not parse {} "
             "as a time unit in string {}".format(
                 unit, duration_raw
             )
         )
     return float(value) * conversion
-
 
 def parse_temperature_to_celsius(
     temperature_raw: str,
@@ -301,13 +308,40 @@ def parse_temperature_to_celsius(
         )
     return float(value) * conversion
 
+def get_row_indices(excel_file_path, 
+                    sheet_name, 
+                    **kwargs
+                    ) -> Iterable[int]:
+    """
+    Return an iterable of the row indices of a given sheet 
+    that correspond to the first row of data of each time
+    point.
+    
+    Parameters
+    ----------
+    excel_file_path : str
+        Path to an excel file to parse.
+
+    sheet_name : str
+        Name of the sheet within the excel file.
+        
+    **kwargs :
+        Additional keyword arguments passed to
+        pandas.read_excel()
+    """
+    sheet_df = pd.read_excel(excel_file_path, 
+                             sheet_name=sheet_name,
+                             **kwargs)
+    A_mask = sheet_df.iloc[:,0]=="A"
+    return [index for index, bool_A in enumerate(A_mask) if bool_A]
 
 def parse_titration_data(
-    excel_file: str,
-    plate_header_rows: Iterable[int],
+    excel_file_path: str,
     metadata_row_offset: int,
     sample_id_prefix: str = "sample",
     temperature: str = None,
+    medium: str = None,
+    virus_name: str = None,
     verbose: bool = False,
     **kwargs
 ) -> pl.DataFrame:
@@ -317,13 +351,8 @@ def parse_titration_data(
 
     Parameters
     ----------
-    excel_file : str
+    excel_file_path : str
         Path to an excel file to parse.
-
-    plate_header_rows : Iterable[int]
-        Iterable set of integers representing
-        the header rows within the excel sheet
-        of individual 96-well plates.
 
     metadata_row_offset : int
         Where is the plate metadata row
@@ -331,7 +360,7 @@ def parse_titration_data(
         (This differs among datasheets,
         but it is typically 0 (same row)
         or 1 (one row above)
-
+        
     sample_id_prefix : str
         Prefix for the string sample unique ids. Default
         "sample".
@@ -341,11 +370,16 @@ def parse_titration_data(
         parsed? Default False.
 
     temperature : str
-        Temperature for all data in the
-        sheet, if shared among all data and known,
+        Temperature for all data in the file
         as a string parseable by parse_temperature_to_celsius().
         Otherwise, will attempt to parse temperature
         metadata from plate header rows.
+        
+    medium : str
+        Medium for all data in the file   
+        
+    virus_name : str
+        Virus name for all data in the file     
 
     **kwargs :
         Additional keyword arguments passed to
@@ -360,63 +394,78 @@ def parse_titration_data(
     ------
     A ValueError if validation fails.
     """
-    results = [None] * len(plate_header_rows)
+    xlsx_file = pd.ExcelFile(excel_file_path)
+    
+    sheet_results =  [None] * len(xlsx_file.sheet_names)
+    for i_sheet, sheet_name in enumerate(xlsx_file.sheet_names):
+        
+        plate_header_rows = get_row_indices(excel_file_path, 
+                                                       sheet_name,
+                                                       **kwargs)
+            
+        results = [None] * len(plate_header_rows)
+        for i_plate, header_row in enumerate(plate_header_rows):
+            if verbose:
+                print("Parsing plate {}".format(i_plate))
+            metadata_row = header_row + metadata_row_offset
+            plate, meta = parse_plate(
+                excel_file_path,
+                sheet_name,
+                plate_header_row=header_row,
+                plate_metadata_row=metadata_row,
+                **kwargs
+            )
 
-    for i_plate, header_row in enumerate(
-        plate_header_rows
-    ):
-        if verbose:
-            print("Parsing plate {}".format(i_plate))
-        metadata_row = header_row + metadata_row_offset
-        plate, meta = parse_plate(
-            excel_file,
-            plate_header_row=header_row,
-            plate_metadata_row=metadata_row,
-            **kwargs
-        )
-
-        if verbose:
-            print("Parsed plate:")
-            print(plate)
-            print("Parsed metadata:")
-            print(meta)
-
-        if temperature is None:
-            timepoint = meta.iloc[0][0].strip()
-            temp = meta.iloc[0][1].strip()
-        else:
-            timepoint = meta.iloc[0][0].strip()
-            temp = temperature
-            # some sheets do not explicitly name
-            # the temparture, others do.
-        plate = clean_single_plate(plate).with_columns(
-            timepoint_minutes=pl.lit(
-                parse_duration_to_minutes(timepoint)
-            ),
-            temperature_celsius=pl.lit(
-                parse_temperature_to_celsius(temp)
-            ),
-            sample_id=(
-                pl.lit(
-                    "{}-t{}-{}-rep".format(
-                        sample_id_prefix,
-                        temp.replace(" ", "-"),
-                        timepoint.replace(" ", "-"),
+            if verbose:
+                print("Parsed plate:")
+                print(plate)
+                print("Parsed metadata:")
+                print(meta)
+                
+            timetemp = meta.iloc[0,0]
+            timepoint = timetemp.strip()
+            if not temperature:
+                temp = sheet_name.split()[0]
+                
+                if not medium:
+                    med = sheet_name.split()[1]
+                else:
+                    med = medium
+            else:
+                temp = temperature
+                med = sheet_name.split()[0]
+            
+            plate = clean_single_plate(plate).with_columns(
+                timepoint_hours=pl.lit(
+                    parse_duration_to_hours(timepoint)
+                ),
+                temperature_celsius=pl.lit(
+                    parse_temperature_to_celsius(temp)
+                ),
+                medium_name=pl.lit(med),
+                virus_name = pl.lit(virus_name),
+                sample_id=(
+                    pl.lit(
+                        "{}-{}-t{}-{}-{}-rep".format(
+                            sample_id_prefix,
+                            virus_name,
+                            temp.replace(" ", "-"),
+                            med.replace(" ", "-"),
+                            timepoint.replace(" ", "-"),
+                        )
                     )
-                )
-                + pl.col("replicate").cast(pl.Utf8)
-            ),
-        )
-        results[i_plate] = plate
+                    + pl.col("replicate").cast(pl.Utf8)
+                ),
+            )
+                        
+            results[i_plate] = plate
 
-    all_results = pl.concat(results)
-    validate_longform_data(all_results)
+        sheet_results[i_sheet] = pl.concat(results)
+        validate_longform_data(sheet_results[i_sheet])
+    all_results = pl.concat(sheet_results)
     return all_results
 
-
 def main(
-    # excel_file_path_63C_and_pilot: str,
-    # excel_file_path_72C: str,
     excel_file_path_milk: str,
     excel_file_path_surface: str,
     excel_file_path_wastewater: str,
@@ -455,70 +504,57 @@ def main(
     None
     """
     # constants not encoded in the raw data sheet
-    virus_name = "H5N1_mountain_lion_isolate"
-    # virus_name = "H5N1_cow_isolate"
-    medium_name = "milk"
-    # medium_name = "wastewater"
-    well_volume = 0.1
-    sample_id_prefix = "{}-{}".format(
-        virus_name, medium_name
-    )
+    well_volume = 0.1 # check
     usecols = "A:N"
-
-    parsed_63 = (
-        parse_titration_data(
-            excel_file_path_63C_and_pilot,
-            [7 + 11 * x for x in range(13)],
-            -1,
-            sample_id_prefix=sample_id_prefix,
+    virus_name_all = "H5N1_cow_isolate"
+    verbose_all = False
+    
+    parsed_milk = parse_titration_data(
+            excel_file_path_milk,
+            metadata_row_offset=-1,
+            sample_id_prefix="sample",
+            medium="milk",
+            virus_name = virus_name_all,
+            verbose = verbose_all,
             usecols=usecols,
-        )
-        .filter(
-            pl.col("timepoint_minutes")
-            > 0
-            # do not use 0 timepoint for 63C
-            # as it is before ramp-up
-        )
-        .with_columns(is_pilot=pl.lit(False))
     )
 
-    parsed_72_pilot = parse_titration_data(
-        excel_file_path_63C_and_pilot,
-        [
-            153 + 11 * x for x in range(8)
-        ],  # 72C pilot experiment
-        -1,
-        sample_id_prefix=sample_id_prefix + "-pilot",
+    parsed_surface = parse_titration_data(
+        excel_file_path_surface,
+        metadata_row_offset=-1,
+        sample_id_prefix="sample",
+        virus_name = virus_name_all,
+        verbose = verbose_all,
         usecols=usecols,
-    ).with_columns(is_pilot=pl.lit(True))
+    )
 
-    parsed_72 = parse_titration_data(
-        excel_file_path_72C,
-        [19 + 11 * x for x in range(7)],
-        -1,
-        sample_id_prefix=sample_id_prefix,
+    parsed_wastewater = parse_titration_data(
+        excel_file_path_wastewater,
+        metadata_row_offset=-1,
+        sample_id_prefix="sample",
+        virus_name = virus_name_all,
+        verbose = verbose_all,
         usecols=usecols,
-        temperature="72C",
-    ).with_columns(is_pilot=pl.lit(False))
+        temperature="4C",
+    )
 
     parsed = pl.concat(
-        [parsed_63, parsed_72, parsed_72_pilot]
+        [parsed_milk, parsed_surface, parsed_wastewater]
     )
-
+    ## stop here
+    
     # filter out wells that weren't used
     # and add metadata
     dat = (
         parsed.drop_nulls(["well_status"])
         .with_columns(
-            virus=pl.lit(virus_name),
-            medium=pl.lit(medium_name),
             well_volume_ml=pl.lit(well_volume),
         )
         .with_columns(
             condition_id=(
-                pl.col("virus")
+                pl.col("virus_name")
                 + pl.lit("-")
-                + pl.col("medium")
+                + pl.col("medium_name")
                 + pl.lit("-")
                 + pl.col("temperature_celsius").cast(
                     pl.Utf8
@@ -526,27 +562,22 @@ def main(
                 + pl.lit("C")
             )
         )
-        .with_columns(
-            condition_id=pl.when(pl.col("is_pilot"))
-            .then(pl.col("condition_id") + "-pilot")
-            .otherwise(pl.col("condition_id"))
-        )
         .select(
-            "virus",
-            "medium",
+            "virus_name",
+            "medium_name",
             "temperature_celsius",
-            "timepoint_minutes",
+            "timepoint_hours",
             "replicate",
             "log10_dilution",
             "well_status",
             "well_volume_ml",
             "condition_id",
             "sample_id",
-            "is_pilot",
         )
     )
 
     dat.write_csv(save_path, separator=separator)
+    print("Data cleaned")
 
 
 if __name__ == "__main__":
