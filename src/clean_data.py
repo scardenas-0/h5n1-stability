@@ -504,7 +504,7 @@ def main(
     None
     """
     # constants not encoded in the raw data sheet
-    well_volume = 0.1 # check
+    well_volume = 0.05 # check
     usecols = "A:N"
     virus_name_all = "H5N1_cow_isolate"
     verbose_all = False

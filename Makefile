@@ -100,7 +100,6 @@ DEFAULT_TABLE_DEPS := $(DEFAULT_FIGURE_DEPS)
 ########
 # Rules
 ########
-# $(CLEANED_DATA): $(SRC)/clean_data.py $(RAW_DATA_63C) $(RAW_DATA_72C)
 $(CLEANED_DATA): $(SRC)/clean_data.py $(RAW_DATA_MILK) $(RAW_DAT_SURFACE) $(RAW_DAT_WWATER)
 > $(MKDIR) $(CLEANED)
 > $(PYTHON) $^ $@
