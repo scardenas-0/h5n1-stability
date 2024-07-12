@@ -66,7 +66,7 @@ def main(
         data_path,
         titer_mcmc_path,
         halflife_mcmc_path,
-        include_pilot=False,
+        # include_pilot=False,
     )
     titers = tidy_results["titers"]
     hls = tidy_results["halflives"]
@@ -75,38 +75,36 @@ def main(
         display_titer=pl.when(pl.col("detected"))
         .then(10 ** pl.col("log_titer"))
         .otherwise(10 ** pl.col("log10_approx_lod"))
+    ).filter(
+        medium_name="milk"
     )
 
     hls_reg = ana.downsample_draws(
         hls_int, 10, id_column="sample_id"
     ).with_columns(
         initial_titer=10 ** pl.col("log_titer_intercept")
+    ).filter(
+        medium_name="milk"
     )
 
     reg_plot = plot.titer_regression(
         titers,
-        hls_reg.filter(pl.col("temperature_celsius") < 70),
+        hls_reg,
         facet={
             "col": "temperature_celsius",
             "sharex": False,
             "label_cols": False,
         },
     )
-    # do not plot exp decay lines for 72C as
-    # raw data pattern does not follow a fixed-rate
-    # exponential
 
     hls = hls.with_columns(
-        halflife_seconds=pl.col("halflife") * 60.0
-    ).filter(pl.col("temperature_celsius") < 70)
-    # do not plot an estimated half-life for 72C since
-    # raw data pattern does not follow a fixed-rate
-    # exponential
+        halflife_days=pl.col("halflife")
+    )
 
     hl_plot = plot.halflife_violins(
         hls,
         x_column="condition_id",
-        halflife_column="halflife_seconds",
+        halflife_column="halflife_days",
         additional_mappings=dict(
             fillcolor="condition_id",
             markerfacecolor="condition_id",
@@ -133,23 +131,23 @@ def main(
     fig.supxlabel(None)
     fig.supylabel(None)
 
-    title_63C = "63C"
-    title_72C = "72C"
+    title_milk_4C = "4C"
+    title_milk_22C = "22C"
 
-    ax[0, 0].set_title(title_63C)
-    ax[0, 1].set_title(title_72C)
-    ax[0, 0].set_ylim([1e-1, 1e8])
-    ax[0, 0].set_xlim([-0.1, 5.2])
-    ax[0, 1].set_xlim([-0.01, 0.52])
+    ax[0, 0].set_title(title_milk_4C)
+    ax[0, 1].set_title(title_milk_22C)
+    # ax[0, 0].set_ylim([1e-1, 1e8])
+    # ax[0, 0].set_xlim([-0.01, 5.2])
+    # ax[0, 1].set_xlim([-0.01, 5.2])
     ax[0, 0].set_xlabel(
-        "Time (min since target temperature reached)", x=1
+        "Time (days)", x=1
     )
     ax[0, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
 
     ax[1, 0].yaxis.set_major_formatter(ScalarFormatter())
-    ax[1, 0].set_ylabel("Half-life (sec)")
-    ax[1, 0].set_ylim([0, 8])
-    ax[1, 0].set_yticks(range(9))
+    ax[1, 0].set_ylabel("Half-life (days)")
+    # ax[1, 0].set_ylim([0, 8])
+    # ax[1, 0].set_yticks(range(9))
 
     if prior_annotate:
         ax[1, 0].set_xlabel(

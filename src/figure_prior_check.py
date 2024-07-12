@@ -79,17 +79,14 @@ def main(
     )
 
     reg_plot = plot.titer_regression(
-        titers.filter(pl.col("temperature_celsius") < 70),
-        hls_reg.filter(pl.col("temperature_celsius") < 70),
+        titers,
+        hls_reg,
         facet={
             "col": "temperature_celsius",
             "sharex": False,
             "label_cols": False,
         },
     )
-    # do not plot exp decay lines for 72C as
-    # raw data pattern does not follow a fixed-rate
-    # exponential
 
     fig, ax = plt.subplots(1, 1, figsize=[5, 4])
 

@@ -2,7 +2,7 @@
 loc = 0
 scale = 10
 
-[log_halflife_hours]
+[log_halflife_days]
 # Normal on the log-halflife
 # but with priors on exp(mu)
 # and exp(sigma) for readability

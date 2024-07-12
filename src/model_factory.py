@@ -67,7 +67,8 @@ def model_factory(
     elif model_name == "halflife":
         # only infer half-life for certain conditions
         halflife_conditions = [
-            "H5N1_cow_isolate-milk-22.0C"
+            "H5N1_cow_isolate-milk-22.0C",
+            "H5N1_cow_isolate-milk-4.0C"
         ]
 
         data = data.filter(
@@ -95,13 +96,13 @@ def model_factory(
             well_intercept_scale_id=data[
                 "condition_id"
             ].to_numpy(),
-            well_time=data["timepoint_hours"].to_numpy(),
+            well_time=data["timepoint_days"].to_numpy(),
             well_volume=data["well_volume_ml"].to_numpy(),
             false_hit_rate=0,
             log_base=10,
         )
 
-        hl = prior_params["log_halflife_hours"]
+        hl = prior_params["log_halflife_days"]
         t0_mode = prior_params["t0_log10_titer_mode"]
         t0_sd = prior_params["t0_log10_titer_sd"]
 

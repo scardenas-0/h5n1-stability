@@ -215,12 +215,12 @@ def clean_single_plate(
     return plate_long
 
 
-def parse_duration_to_hours(duration_raw: str) -> float:
+def parse_duration_to_days(duration_raw: str) -> float:
     """
     Parse a duration string in the form
     '<number><1 letter unit>', stripping away
     any whitespace, return the duration value
-    as a float in units of hours.
+    as a float in units of days.
     As this function is specific to cleaning a
     particular dataset, 'h'` and `'d' are the
     only parseable input units.
@@ -236,7 +236,7 @@ def parse_duration_to_hours(duration_raw: str) -> float:
 
     Returns
     -------
-    The parsed duration as a float in units of hours.
+    The parsed duration as a float in units of days.
 
     Raises
     ------
@@ -248,7 +248,7 @@ def parse_duration_to_hours(duration_raw: str) -> float:
     unit = duration_stripped[-1]
     value = duration_stripped[:-1]
 
-    conversions = {"h": 1, "d": 24.0}
+    conversions = {"h": 1 / 24.0, "d": 1.0}
 
     conversion = conversions.get(unit, None)
     if conversion is None:
@@ -436,8 +436,8 @@ def parse_titration_data(
                 med = sheet_name.split()[0]
             
             plate = clean_single_plate(plate).with_columns(
-                timepoint_hours=pl.lit(
-                    parse_duration_to_hours(timepoint)
+                timepoint_days=pl.lit(
+                    parse_duration_to_days(timepoint)
                 ),
                 temperature_celsius=pl.lit(
                     parse_temperature_to_celsius(temp)
@@ -504,7 +504,7 @@ def main(
     None
     """
     # constants not encoded in the raw data sheet
-    well_volume = 0.05 # check
+    well_volume = 0.05
     usecols = "A:N"
     virus_name_all = "H5N1_cow_isolate"
     verbose_all = False
@@ -535,13 +535,12 @@ def main(
         virus_name = virus_name_all,
         verbose = verbose_all,
         usecols=usecols,
-        temperature="4C",
+        temperature="22C",
     )
 
     parsed = pl.concat(
         [parsed_milk, parsed_surface, parsed_wastewater]
     )
-    ## stop here
     
     # filter out wells that weren't used
     # and add metadata
@@ -566,7 +565,7 @@ def main(
             "virus_name",
             "medium_name",
             "temperature_celsius",
-            "timepoint_hours",
+            "timepoint_days",
             "replicate",
             "log10_dilution",
             "well_status",

@@ -80,7 +80,8 @@ PRIOR_CHECK_FIGURES := $(patsubst %, \
    $(FIGURES)/figure-prior-check-%.pdf, \
    $(HALFLIFE_MODEL_NAMES))
 
-ALL_FIGURES := $(FIT_FIGURES) $(PRIOR_CHECK_FIGURES)
+ALL_FIGURES := $(FIT_FIGURES)
+# ALL_FIGURES := $(FIT_FIGURES) $(PRIOR_CHECK_FIGURES)
 
 TABLE_TITERS := $(TABLES)/titers.tsv
 HALFLIFE_TABLES := $(patsubst %, $(TABLES)/table_halflives_%.tsv, \

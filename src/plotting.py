@@ -278,7 +278,7 @@ def titer_regression(
     regression_lines: pl.DataFrame,
     facet: dict = None,
     xmin=0,
-    xmax=20,
+    xmax=7,
     linealpha=0.25,
     **kwargs
 ):
@@ -290,7 +290,7 @@ def titer_regression(
         data=titers,
         mapping=dict(
             y="titer",
-            x="timepoint_minutes",
+            x="timepoint_days",
             group="sample_id",
         ),
         facet=facet,
@@ -321,7 +321,8 @@ def titer_regression(
             ),
             geoms.GeomPointInterval(
                 mapping=dict(
-                    y="display_titer", marker="detected"
+                    y="display_titer", 
+                    marker="detected"
                 ),
                 name="Titer posterior estimates",
                 markersize=10,
