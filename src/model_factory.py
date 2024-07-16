@@ -65,17 +65,8 @@ def model_factory(
             assay="tcid",
         )
     elif model_name == "halflife":
-        # only infer half-life for certain conditions
-        halflife_conditions = [
-            "H5N1_cow_isolate-milk-22.0C",
-            "H5N1_cow_isolate-milk-4.0C"
-        ]
-
-        data = data.filter(
-            pl.col("condition_id").is_in(
-                halflife_conditions
-            )
-        )
+        # halflife_conditions = ["H5N1_cow_isolate-milk-22.0C", "H5N1_cow_isolate-milk-4.0C"]
+        # data = data.filter(pl.col("condition_id").is_in(halflife_conditions))
 
         m_data = HalfLifeData(
             well_status=data["well_status"].to_numpy(),

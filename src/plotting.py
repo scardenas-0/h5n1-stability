@@ -64,6 +64,7 @@ condition_color_scale = scales.ScaleColorManual(
         "H5N1_mountain_lion_isolate-milk-63.0C": "orange",
         "H5N1_mountain_lion_isolate-milk-72.0C": "red",
         "k": "k",
+        "orange": "orange"
     }
 )
 
@@ -315,9 +316,10 @@ def titer_regression(
                     yintercept="initial_titer",
                     rate="exp_rate",
                     group="sample_id",
-                    color="condition_id",
+                    # color="condition_id",
                 ),
                 name="Predicted decay",
+                color="orange"
             ),
             geoms.GeomPointInterval(
                 mapping=dict(
@@ -403,7 +405,7 @@ def halflife_violins(
         geoms=[
             geoms.GeomViolin(
                 name="halflives",
-                violinwidth=5,
+                violinwidth=1,
                 linecolor="none",
                 norm="max",
                 color="k",

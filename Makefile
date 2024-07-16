@@ -74,10 +74,10 @@ ALL_CHAINS := $(ALL_TITER_CHAINS) $(ALL_HALFLIFE_CHAINS)
 
 DEFAULT_FIGURE_DEPS := $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) \
    $(DEFAULT_HALFLIFE_CHAINS)
-FIT_FIGURES := $(patsubst %, $(FIGURES)/figure-fit-%.pdf, \
+FIT_FIGURES := $(patsubst %, $(FIGURES)/figure-fit-%, \
    $(HALFLIFE_MODEL_NAMES))
 PRIOR_CHECK_FIGURES := $(patsubst %, \
-   $(FIGURES)/figure-prior-check-%.pdf, \
+   $(FIGURES)/figure-prior-check-%, \
    $(HALFLIFE_MODEL_NAMES))
 
 ALL_FIGURES := $(FIT_FIGURES)
@@ -115,12 +115,12 @@ $(CHAINS)/halflife_%.pickle: $(SRC)/fit_model.py $(DEFAULT_CHAIN_DEPS) \
 > $(MKDIR) $(CHAINS)
 > $(PYTHON) $^ halflife -o $@
 
-$(FIGURES)/figure-fit-%.pdf: $(SRC)/figure_fit.py $(CLEANED_DATA) \
+$(FIGURES)/figure-fit-%: $(SRC)/figure_fit.py $(CLEANED_DATA) \
    $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife_%.pickle
 > $(MKDIR) $(FIGURES)
 > $(PYTHON) $^ $@
 
-$(FIGURES)/figure-prior-check-%.pdf: $(SRC)/figure_prior_check.py \
+$(FIGURES)/figure-prior-check-%: $(SRC)/figure_prior_check.py \
    $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife_%.pickle
 > $(MKDIR) $(FIGURES)
 > $(PYTHON) $^ $@

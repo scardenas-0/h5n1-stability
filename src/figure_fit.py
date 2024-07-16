@@ -66,27 +66,36 @@ def main(
         data_path,
         titer_mcmc_path,
         halflife_mcmc_path,
-        # include_pilot=False,
     )
-    titers = tidy_results["titers"]
-    hls = tidy_results["halflives"]
-    hls_int = tidy_results["halflives_with_intercepts"]
-    titers = titers.with_columns(
+    titers = tidy_results["titers"].with_columns(
         display_titer=pl.when(pl.col("detected"))
         .then(10 ** pl.col("log_titer"))
         .otherwise(10 ** pl.col("log10_approx_lod"))
-    ).filter(
-        medium_name="milk"
     )
+    hls = tidy_results["halflives"].with_columns(
+        halflife_days=pl.col("halflife")
+    )
+    hls_int = tidy_results["halflives_with_intercepts"]
 
     hls_reg = ana.downsample_draws(
         hls_int, 10, id_column="sample_id"
     ).with_columns(
         initial_titer=10 ** pl.col("log_titer_intercept")
-    ).filter(
-        medium_name="milk"
     )
-
+    
+    raw_milk(titers, hls, hls_reg, hl_model, output_path)
+    surfaces(titers, hls, hls_reg, hl_model, output_path)
+    
+def raw_milk(titers, 
+             hls,
+             hls_reg, 
+             hl_model, 
+             output_path):
+    
+    hls = hls.filter(medium_name="milk")
+    titers = titers.filter(medium_name="milk")
+    hls_reg = hls_reg.filter(medium_name="milk")
+    
     reg_plot = plot.titer_regression(
         titers,
         hls_reg,
@@ -95,10 +104,6 @@ def main(
             "sharex": False,
             "label_cols": False,
         },
-    )
-
-    hls = hls.with_columns(
-        halflife_days=pl.col("halflife")
     )
 
     hl_plot = plot.halflife_violins(
@@ -136,18 +141,11 @@ def main(
 
     ax[0, 0].set_title(title_milk_4C)
     ax[0, 1].set_title(title_milk_22C)
-    # ax[0, 0].set_ylim([1e-1, 1e8])
-    # ax[0, 0].set_xlim([-0.01, 5.2])
-    # ax[0, 1].set_xlim([-0.01, 5.2])
-    ax[0, 0].set_xlabel(
-        "Time (days)", x=1
-    )
+    ax[0, 0].set_xlabel("Time (days)", x=1)
     ax[0, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
 
     ax[1, 0].yaxis.set_major_formatter(ScalarFormatter())
     ax[1, 0].set_ylabel("Half-life (days)")
-    # ax[1, 0].set_ylim([0, 8])
-    # ax[1, 0].set_yticks(range(9))
 
     if prior_annotate:
         ax[1, 0].set_xlabel(
@@ -156,9 +154,85 @@ def main(
 
     ax[1, 0].set_xticklabels("")
     ax[1, 1].set_xticklabels("")
+    
+    output_path = output_path + "-milk.pdf"
+    
     print(f"Saving figure to {output_path}...")
     fig.savefig(output_path)
 
+def surfaces(titers, hls, hls_reg, hl_model, output_path):
+    titers = titers.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
+    hls_reg = hls_reg.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
+    hls = hls.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
+    
+    reg_plot = plot.titer_regression(
+        titers,
+        hls_reg,
+        facet={
+            "row": "medium_name",
+            "col": "temperature_celsius",
+            "sharex": False,
+            "label_cols": False,
+        },
+    )
+    
+    hl_plot = plot.halflife_violins(hls,
+        x_column= "medium_name",
+        halflife_column="halflife_days",
+        additional_mappings=dict(
+            fillcolor="condition_id",
+            markerfacecolor="condition_id",
+        ),
+        scales=dict(
+            fillcolor=plot.condition_color_scale,
+            markerfacecolor=plot.condition_color_scale,
+            x=ScaleXCategorical(),
+        ),
+        facet=dict(
+            col="temperature_celsius",
+            sharex=False,
+            label_cols=False,
+        ),
+        markeredgewidth=3,
+    )
+
+    fig, ax = plt.subplots(
+        3, 2, figsize=[10, 8], sharex=None, sharey=None
+    )
+
+    reg_plot.render(fig=fig, ax=ax[:2,::]) 
+    hl_plot.render(fig=fig, ax=ax[2, ::])
+    fig.supxlabel(None)
+    fig.supylabel(None)
+
+    title_4C = "4C"
+    title_22C = "22C"
+
+    ax[0, 0].set_title(title_4C)
+    ax[0, 1].set_title(title_22C)
+    ax[0, 0].set_ylim([1e-1, 1e8])
+    ax[1, 0].set_ylim([1e-1, 1e8])
+    ax[0, 1].set_ylim([1e-1, 1e8])
+    ax[1, 1].set_ylim([1e-1, 1e8])
+    ax[1, 0].set_xlabel("Time (days)", x=1)
+    ax[0, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[0, 0].set_xticklabels("")
+    ax[0, 1].set_xticklabels("")
+
+    ax[2, 0].yaxis.set_major_formatter(ScalarFormatter())
+    ax[2, 0].set_ylabel("Half-life (days)")
+
+    if prior_annotate:
+        ax[2, 0].set_xlabel(
+            plot.get_annotation_string(hl_model)
+        )
+
+    ax[2,0].set_xticks((0, 1), labels = ["polypropylene", "steel"])
+    ax[2,1].set_xticks((0, 1), labels = ["polypropylene", "steel"])
+    
+    output_path = output_path + "-surfaces.pdf"
+    print(f"Saving figure to {output_path}...")
+    fig.savefig(output_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

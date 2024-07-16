@@ -60,7 +60,7 @@ def main(
         data_path,
         titer_mcmc_path,
         halflife_mcmc_path,
-        include_pilot=False,
+        # include_pilot=False,
     )
     titers = tidy_results["titers"]
     hls_int = tidy_results[
@@ -70,12 +70,18 @@ def main(
         display_titer=pl.when(pl.col("detected"))
         .then(10 ** pl.col("log_titer"))
         .otherwise(10 ** pl.col("log10_approx_lod"))
+    ).filter(
+        medium_name = "milk",
+        # temperature_celsius = 4.0
     )
 
     hls_reg = ana.downsample_draws(
         hls_int, 10, id_column="sample_id"
     ).with_columns(
         initial_titer=10 ** pl.col("log_titer_intercept")
+    ).filter(
+        medium_name = "milk",
+        # temperature_celsius = 4.0
     )
 
     reg_plot = plot.titer_regression(
@@ -88,20 +94,21 @@ def main(
         },
     )
 
-    fig, ax = plt.subplots(1, 1, figsize=[5, 4])
+    fig, ax = plt.subplots(1, 2, figsize=[5, 4])
 
     reg_plot.render(fig=fig, ax=ax)
     fig.supxlabel(None)
     fig.supylabel(None)
-    ax.set_title("63C")
-    ax.set_ylim([1e-1, 1e8])
-    ax.set_xlim([-0.1, 5.2])
-    ax.set_xlabel(
-        "Time (min since target temperature reached)"
+    # ax.set_title("4C")
+    ax[0].set_ylim([1e-1, 1e8])
+    ax[1].set_ylim([1e-1, 1e8])
+    # ax.set_xlim([-0.1, 5.2])
+    ax[0].set_xlabel(
+        "Time (days)"
         + "\n\n"
         + plot.get_annotation_string(hl_model)
     )
-    ax.set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
 
     print(f"Saving figure to {output_path}...")
     fig.savefig(output_path)
