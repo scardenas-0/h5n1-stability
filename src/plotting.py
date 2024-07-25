@@ -61,8 +61,14 @@ marker_scale = scales.ScaleDiscreteManual(
 )
 condition_color_scale = scales.ScaleColorManual(
     mapping={
-        "H5N1_mountain_lion_isolate-milk-63.0C": "orange",
-        "H5N1_mountain_lion_isolate-milk-72.0C": "red",
+        "H5N1_cow_isolate-milk-4.0C": "blue", # "#094B93",
+        "H5N1_cow_isolate-milk-22.0C": "orange",
+        "H5N1_cow_isolate-steel-4.0C": "blue",
+        "H5N1_cow_isolate-steel-22.0C": "orange",
+        "H5N1_cow_isolate-polypropylen-4.0C": "blue",
+        "H5N1_cow_isolate-polypropylen-22.0C": "orange",
+        "H5N1_cow_isolate-wastewater-22.0C": "green",
+        "H5N1_cow_isolate-DI-22.0C": "blue",
         "k": "k",
         "orange": "orange"
     }
@@ -292,7 +298,7 @@ def titer_regression(
         mapping=dict(
             y="titer",
             x="timepoint_days",
-            group="sample_id",
+            group="sample_id"
         ),
         facet=facet,
         geoms=[
@@ -316,19 +322,20 @@ def titer_regression(
                     yintercept="initial_titer",
                     rate="exp_rate",
                     group="sample_id",
-                    # color="condition_id",
+                    color="condition_id",
                 ),
                 name="Predicted decay",
-                color="orange"
+                # color="orange"
             ),
             geoms.GeomPointInterval(
                 mapping=dict(
                     y="display_titer", 
-                    marker="detected"
+                    marker="detected",
+                    color = "condition_id"
                 ),
                 name="Titer posterior estimates",
                 markersize=10,
-                markerfacecolor="#abb0ae",
+                # markerfacecolor="#abb0ae",
                 markeredgewidth=1,
                 lw=3,
                 alpha=0.7,
@@ -408,7 +415,7 @@ def halflife_violins(
                 violinwidth=1,
                 linecolor="none",
                 norm="max",
-                color="k",
+                color="condition_id",
                 trimtails=0.005,
             ),
             geoms.GeomPointIntervalY(
