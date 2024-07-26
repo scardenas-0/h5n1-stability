@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import re
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -71,7 +72,10 @@ def main(
         display_titer=pl.when(pl.col("detected"))
         .then(10 ** pl.col("log_titer"))
         .otherwise(10 ** pl.col("log10_approx_lod"))
+    ).with_columns(
+        pl.col('sample_id').str.extract(r'rep(\d+)', 1).cast(pl.Int64).alias('rep_number')
     )
+    
     hls = tidy_results["halflives"].with_columns(
         halflife_days=pl.col("halflife")
     )
@@ -83,10 +87,10 @@ def main(
         initial_titer=10 ** pl.col("log_titer_intercept")
     )
     
-    # raw_milk(titers, hls, hls_reg, hl_model, output_path)
-    # surfaces(titers, hls, hls_reg, hl_model, output_path)
+    raw_milk(titers, hls, hls_reg, hl_model, output_path)
+    surfaces(titers, hls, hls_reg, hl_model, output_path)
     surfaces2(titers, hls, hls_reg, hl_model, output_path)
-    # water(titers, hls, hls_reg, hl_model, output_path)
+    water(titers, hls, hls_reg, hl_model, output_path)
     
 def raw_milk(titers, 
              hls,

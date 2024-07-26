@@ -50,6 +50,7 @@ TITER_MODEL_NAMES := $(patsubst \
 HALFLIFE_MODEL_NAMES := $(patsubst \
    $(PRIOR_CONFIG)/priors_halflife_%.toml, %, $(HALFLIFE_PRIORS))
 ALL_MODEL_NAMES := $(TITER_MODEL_NAMES) $(HALFLIFE_MODEL_NAMES)
+FIGURE_NAMES := milk surfaces surfaces-2 water
 
 MCMC_CONFIG := $(DAT)/mcmc_config.toml
 ALL_CONFIGS := $(ALL_PRIORS) $(MCMC_CONFIG)
@@ -62,7 +63,6 @@ RAW_DAT_SURFACE := $(RAW)/stability_surface.xlsx
 RAW_DAT_WWATER := $(RAW)/wastewater-data.xlsx
 CLEANED_DATA := $(CLEANED)/data.tsv
 
-
 DEFAULT_CHAIN_DEPS := $(CLEANED_DATA) $(MCMC_CONFIG)
 DEFAULT_TITER_CHAINS = $(CHAINS)/individual_titer_default.pickle
 DEFAULT_HALFLIFE_CHAINS = $(CHAINS)/halflife_default.pickle
@@ -74,13 +74,14 @@ ALL_CHAINS := $(ALL_TITER_CHAINS) $(ALL_HALFLIFE_CHAINS)
 
 DEFAULT_FIGURE_DEPS := $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) \
    $(DEFAULT_HALFLIFE_CHAINS)
-FIT_FIGURES := $(patsubst %, $(FIGURES)/figure-fit-%, \
-   $(HALFLIFE_MODEL_NAMES))
+FIT_FIGURES := $(patsubst %, \
+   $(FIGURES)/figure-fit-default-%.pdf, \
+   $(FIGURE_NAMES))
 PRIOR_CHECK_FIGURES := $(patsubst %, \
-   $(FIGURES)/figure-prior-check-%, \
-   $(HALFLIFE_MODEL_NAMES))
+   $(FIGURES)/figure-prior-check-%.pdf, \
+   $(FIGURE_NAMES))
 
-ALL_FIGURES := $(FIT_FIGURES)
+RUN_FIGURES := $(FIGURES)/figure-fit-default
 # ALL_FIGURES := $(FIT_FIGURES) $(PRIOR_CHECK_FIGURES)
 
 TABLE_TITERS := $(TABLES)/titers.tsv
@@ -115,8 +116,8 @@ $(CHAINS)/halflife_%.pickle: $(SRC)/fit_model.py $(DEFAULT_CHAIN_DEPS) \
 > $(MKDIR) $(CHAINS)
 > $(PYTHON) $^ halflife -o $@
 
-$(FIGURES)/figure-fit-%: $(SRC)/figure_fit.py $(CLEANED_DATA) \
-   $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife_%.pickle
+$(FIGURES)/figure-fit-default: $(SRC)/figure_fit.py $(CLEANED_DATA) \
+   $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife_default.pickle
 > $(MKDIR) $(FIGURES)
 > $(PYTHON) $^ $@
 
@@ -161,7 +162,7 @@ ALL_TARGETS := $(CLEANED_DATA) $(ALL_CHAINS) $(ALL_FIGURES) $(ALL_TABLES)
 all: $(ALL_TARGETS)
 data: $(CLEANED_DATA)
 chains: $(ALL_CHAINS)
-figures: $(ALL_FIGURES)
+figures: $(RUN_FIGURES)
 tables: $(ALL_TABLES)
 
 ##########################

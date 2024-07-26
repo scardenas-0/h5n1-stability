@@ -70,7 +70,10 @@ condition_color_scale = scales.ScaleColorManual(
         "H5N1_cow_isolate-wastewater-22.0C": "green",
         "H5N1_cow_isolate-DI-22.0C": "blue",
         "k": "k",
-        "orange": "orange"
+        "orange": "orange",
+        1: "#723D5D",
+        2: "#D47542",
+        3: "#579E6D"
     }
 )
 
@@ -109,7 +112,13 @@ def get_figsize(
 
 
 marker_scale = scales.ScaleDiscreteManual(
-    mapping={True: "o", False: "v"}
+    mapping={True: "o", 
+             False: "v"})
+markerface_scale = scales.ScaleColorManual(
+    mapping = {
+        1: "#723D5D",
+        2: "#D47542",
+        3: "#579E6D"}
 )
 
 
@@ -331,9 +340,11 @@ def titer_regression(
                 mapping=dict(
                     y="display_titer", 
                     marker="detected",
-                    color = "condition_id"
+                    markerfacecolor="rep_number",
+                    # color = "sample_id"
                 ),
                 name="Titer posterior estimates",
+                # marker='-',
                 markersize=10,
                 # markerfacecolor="#abb0ae",
                 markeredgewidth=1,
@@ -346,6 +357,7 @@ def titer_regression(
             y=scales.ScaleY("log"),
             color=condition_color_scale,
             marker=marker_scale,
+            markerfacecolor = markerface_scale
         ),
         alpha=0.75,
         **kwargs
