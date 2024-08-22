@@ -65,16 +65,8 @@ def model_factory(
             assay="tcid",
         )
     elif model_name == "halflife":
-        # only infer half-life for certain conditions
-        halflife_conditions = [
-            "H5N1_mountain_lion_isolate-milk-63.0C"
-        ]
-
-        data = data.filter(
-            pl.col("condition_id").is_in(
-                halflife_conditions
-            )
-        )
+        # halflife_conditions = ["H5N1_cow_isolate-milk-22.0C", "H5N1_cow_isolate-milk-4.0C"]
+        # data = data.filter(pl.col("condition_id").is_in(halflife_conditions))
 
         m_data = HalfLifeData(
             well_status=data["well_status"].to_numpy(),
@@ -95,15 +87,16 @@ def model_factory(
             well_intercept_scale_id=data[
                 "condition_id"
             ].to_numpy(),
-            well_time=data["timepoint_minutes"].to_numpy(),
+            well_time=data["timepoint_days"].to_numpy(),
             well_volume=data["well_volume_ml"].to_numpy(),
             false_hit_rate=0,
             log_base=10,
         )
 
-        hl = prior_params["log_halflife_minutes"]
+        hl = prior_params["log_halflife_days"]
         t0_mode = prior_params["t0_log10_titer_mode"]
         t0_sd = prior_params["t0_log10_titer_sd"]
+        err = prior_params["titer_errors"]
 
         model = HalfLifeModel(
             log_halflife_distribution=dist.Normal(
@@ -112,17 +105,23 @@ def model_factory(
             ),
             log_intercept_distribution=dist.Normal,
             log_intercept_loc_prior=dist.Normal(
-                loc=t0_mode["loc"], scale=t0_mode["scale"]
+                loc=t0_mode["loc"], 
+                scale=t0_mode["scale"]
             ),
             log_intercept_scale_prior=dist.TruncatedNormal(
                 low=0.0,
                 loc=t0_sd["loc"],
                 scale=t0_sd["scale"],
             ),
+            # log_titer_error_distribution=dist.(),
+            log_titer_error_scale_prior=dist.Normal(
+                loc=err["loc"],
+                scale=err["scale"],
+            ),
             assay="tcid",
             intercepts_hier=True,
             halflives_hier=False,
-            titers_overdispersed=False,
+            titers_overdispersed=True,
         )
     else:
         raise ValueError("Unknown model to fit")

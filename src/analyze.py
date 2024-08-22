@@ -217,10 +217,10 @@ def get_sample_index(
     sample_metadata = data.unique("sample_id").select(
         "sample_id",
         "condition_id",
-        "timepoint_minutes",
-        "medium",
+        "timepoint_days",
+        "medium_name",
         "temperature_celsius",
-        "is_pilot",
+        # "is_pilot",
     )
 
     sample_index = (
@@ -295,8 +295,8 @@ def get_condition_index(
         subset="condition_id"
     ).select(
         "condition_id",
-        "virus",
-        "medium",
+        "virus_name",
+        "medium_name",
         "temperature_celsius",
     )
 
@@ -649,7 +649,7 @@ def get_tidy_results(
     data_path: str,
     titer_infer_path: str,
     hl_infer_path: str,
-    include_pilot: bool = False,
+    # include_pilot: bool = False,
     separator: str = "\t",
 ) -> dict[pl.DataFrame]:
     """
@@ -686,8 +686,7 @@ def get_tidy_results(
 
     data = pl.read_csv(data_path, separator=separator)
 
-    if not include_pilot:
-        data = data.filter(~pl.col("is_pilot"))
+    # if not include_pilot: data = data.filter(~pl.col("is_pilot"))
 
     (
         titer_infer,

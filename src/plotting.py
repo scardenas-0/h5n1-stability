@@ -61,9 +61,19 @@ marker_scale = scales.ScaleDiscreteManual(
 )
 condition_color_scale = scales.ScaleColorManual(
     mapping={
-        "H5N1_mountain_lion_isolate-milk-63.0C": "orange",
-        "H5N1_mountain_lion_isolate-milk-72.0C": "red",
+        "H5N1_cow_isolate-milk-4.0C": "blue", # "#094B93",
+        "H5N1_cow_isolate-milk-22.0C": "orange",
+        "H5N1_cow_isolate-steel-4.0C": "blue",
+        "H5N1_cow_isolate-steel-22.0C": "orange",
+        "H5N1_cow_isolate-polypropylen-4.0C": "blue",
+        "H5N1_cow_isolate-polypropylen-22.0C": "orange",
+        "H5N1_cow_isolate-wastewater-22.0C": "green",
+        "H5N1_cow_isolate-DI-22.0C": "blue",
         "k": "k",
+        "orange": "orange",
+        1: "#723D5D",
+        2: "#D47542",
+        3: "#579E6D"
     }
 )
 
@@ -102,7 +112,13 @@ def get_figsize(
 
 
 marker_scale = scales.ScaleDiscreteManual(
-    mapping={True: "o", False: "v"}
+    mapping={True: "o", 
+             False: "v"})
+markerface_scale = scales.ScaleColorManual(
+    mapping = {
+        1: "#723D5D",
+        2: "#D47542",
+        3: "#579E6D"}
 )
 
 
@@ -278,7 +294,7 @@ def titer_regression(
     regression_lines: pl.DataFrame,
     facet: dict = None,
     xmin=0,
-    xmax=20,
+    xmax=7,
     linealpha=0.25,
     **kwargs
 ):
@@ -290,8 +306,8 @@ def titer_regression(
         data=titers,
         mapping=dict(
             y="titer",
-            x="timepoint_minutes",
-            group="sample_id",
+            x="timepoint_days",
+            group="sample_id"
         ),
         facet=facet,
         geoms=[
@@ -318,14 +334,19 @@ def titer_regression(
                     color="condition_id",
                 ),
                 name="Predicted decay",
+                # color="orange"
             ),
             geoms.GeomPointInterval(
                 mapping=dict(
-                    y="display_titer", marker="detected"
+                    y="display_titer", 
+                    marker="detected",
+                    markerfacecolor="rep_number",
+                    # color = "sample_id"
                 ),
                 name="Titer posterior estimates",
+                # marker='-',
                 markersize=10,
-                markerfacecolor="#abb0ae",
+                # markerfacecolor="#abb0ae",
                 markeredgewidth=1,
                 lw=3,
                 alpha=0.7,
@@ -336,6 +357,7 @@ def titer_regression(
             y=scales.ScaleY("log"),
             color=condition_color_scale,
             marker=marker_scale,
+            markerfacecolor = markerface_scale
         ),
         alpha=0.75,
         **kwargs
@@ -402,10 +424,10 @@ def halflife_violins(
         geoms=[
             geoms.GeomViolin(
                 name="halflives",
-                violinwidth=5,
+                violinwidth=1,
                 linecolor="none",
                 norm="max",
-                color="k",
+                color="condition_id",
                 trimtails=0.005,
             ),
             geoms.GeomPointIntervalY(
