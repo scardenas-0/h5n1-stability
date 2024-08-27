@@ -77,19 +77,17 @@ def main(
         data_path,
         titer_mcmc_path,
         halflife_mcmc_path,
-        include_pilot=True,
+        # include_pilot=True,
     )
     hls = tidy_results["halflives"]
 
     hls = ana.with_halflife_derived_quantities(hls)
 
-    # filter out pilot and biphasic experiments
     hls = (
-        hls.filter(pl.col("temperature_celsius") < 72)
-        .with_columns(halflife_minutes=pl.col("halflife"))
+        hls.with_columns(halflife_days=pl.col("halflife"))
         .with_columns(
-            halflife_seconds=pl.col("halflife_minutes")
-            * 60.0
+            halflife_hours=pl.col("halflife_days")
+            * 24.0
         )
         .with_columns(
             time_to_lose_10_logs_10=10
@@ -101,20 +99,20 @@ def main(
         ana.median_qi_table(
             hls,
             [
-                "halflife_minutes",
-                "halflife_seconds",
+                "halflife_days",
+                "halflife_hours",
                 "time_to_lose_10_logs_10",
             ],
             [
-                "virus",
+                "virus_name",
                 "temperature_celsius",
-                "medium",
+                "medium_name",
                 "condition_id",
             ],
         )
         .sort(
-            "virus",
-            "medium",
+            "virus_name",
+            "medium_name",
             "temperature_celsius",
             "condition_id",
         )

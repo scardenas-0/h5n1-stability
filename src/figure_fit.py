@@ -89,7 +89,7 @@ def main(
     
     raw_milk(titers, hls, hls_reg, hl_model, output_path)
     surfaces(titers, hls, hls_reg, hl_model, output_path)
-    surfaces2(titers, hls, hls_reg, hl_model, output_path)
+    # surfaces2(titers, hls, hls_reg, hl_model, output_path)
     water(titers, hls, hls_reg, hl_model, output_path)
     
 def raw_milk(titers, 
@@ -181,6 +181,7 @@ def surfaces(titers, hls, hls_reg, hl_model, output_path):
             "col": "temperature_celsius",
             "sharex": False,
             "label_cols": False,
+            "label_rows": False
         },
     )
     
@@ -220,20 +221,30 @@ def surfaces(titers, hls, hls_reg, hl_model, output_path):
     ax[0, 1].set_title(title_22C)
     ax[0, 0].set_ylim([1e-1, 1e8])
     ax[1, 0].set_ylim([1e-1, 1e8])
-    ax[2, 0].set_yscale('log')
-    ax[2, 0].set_ylim([0.05, 3])
-    ax[2, 0].set_xticks((0, 1), labels = ["polypropylene", "steel"])
-    ax[2, 1].set_xticks((0, 1), labels = ["polypropylene", "steel"])
+    # ax[2, 0].set_yscale('log')
+    ax[2, 0].set_ylim([0, 3])
+    ax[2, 0].set_xticks((0, 1), labels = ["Polypropylene", "Steel"])
+    ax[2, 1].set_xticks((0, 1), labels = ["Polypropylene", "Steel"])
     
     ax[1, 0].set_xlabel("Time (days)", x=1)
     ax[0, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[1, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax0_secondary = ax[0,1].twinx()
+    ax1_secondary = ax[1,1].twinx()
+    ax0_secondary.set_ylabel("Polypropylene", rotation=270, labelpad=15)
+    ax1_secondary.set_ylabel("Steel", rotation=270, labelpad=15)
+    ax0_secondary.set_yticklabels("")
+    ax1_secondary.set_yticklabels("")
+    ax0_secondary.grid(visible=False)
+    ax1_secondary.grid(visible=False)
+    
     ax[0, 0].set_xticklabels("")
     ax[0, 1].set_xticklabels("")
 
     ax[2, 0].yaxis.set_major_formatter(ScalarFormatter())
     ax[2, 0].set_ylabel("Half-life (days)")
 
-    ax[2, 0].set_yticks((0.1, 0.3, 1, 3))
+    # ax[2, 0].set_yticks((0.1, 0.3, 1, 3))
     ax[2, 0].grid(visible = True, which = 'major', axis = 'both')
     ax[2, 1].grid(visible = True, which = 'major', axis = 'both')
     
@@ -298,8 +309,8 @@ def surfaces2(titers, hls, hls_reg, hl_model, output_path):
     ax[0].set_title(title_surfaces)
     ax[0].set_ylim([1e-1, 1e8])
     ax[1].set_ylim([1e-1, 1e8])
-    ax[2].set_yscale('log')
-    ax[2].set_ylim([0.05, 3])
+    # ax[2].set_yscale('log')
+    ax[2].set_ylim([0, 3])
     ax[2].set_xticks((0, 1), labels = ["polypropylene", "steel"])
     # ax[2, 1].set_xticks((0, 1), labels = ["polypropylene", "steel"])
     
@@ -311,11 +322,11 @@ def surfaces2(titers, hls, hls_reg, hl_model, output_path):
     ax[2].yaxis.set_major_formatter(ScalarFormatter())
     ax[2].set_ylabel("Half-life (days)")
 
-    ax[2].set_yticks((0.1, 0.3, 1, 3))
+    # ax[2].set_yticks((0.1, 0.3, 1, 3))
     ax[2].grid(visible = True, which = 'major', axis = 'both')
     
     if prior_annotate:
-        ax[2, 0].set_xlabel(
+        ax[2].set_xlabel(
             plot.get_annotation_string(hl_model)
         )
 
@@ -329,9 +340,9 @@ def water(titers,
              hl_model, 
              output_path):
     
-    titers = titers.filter((pl.col("medium_name")=="wastewater") | (pl.col("medium_name")=="DI"))
-    hls_reg = hls_reg.filter((pl.col("medium_name")=="wastewater") | (pl.col("medium_name")=="DI"))
-    hls = hls.filter((pl.col("medium_name")=="wastewater") | (pl.col("medium_name")=="DI"))
+    titers = titers.filter(pl.col("medium_name")=="wastewater")
+    hls_reg = hls_reg.filter(pl.col("medium_name")=="wastewater")
+    hls = hls.filter(pl.col("medium_name")=="wastewater")
     
     reg_plot = plot.titer_regression(
         titers,
@@ -365,33 +376,33 @@ def water(titers,
     )
 
     fig, ax = plt.subplots(
-        2, 2, figsize=[10, 8], sharex=None, sharey="row"
+        2, 1, figsize=[8, 8], sharex=None, sharey="row"
     )
 
-    reg_plot.render(fig=fig, ax=ax[0, ::])
-    hl_plot.render(fig=fig, ax=ax[1, ::])
+    reg_plot.render(fig=fig, ax=ax[0])
+    hl_plot.render(fig=fig, ax=ax[1])
     fig.supxlabel(None)
     fig.supylabel(None)
 
     title_milk_wwater = "Wastewater"
-    title_milk_DI = "DI water"
+    # title_milk_DI = "DI water"
 
-    ax[0, 1].set_title(title_milk_wwater)
-    ax[0, 0].set_title(title_milk_DI)
-    ax[0, 0].set_ylim([1e-2, 1e5])
-    ax[1, 0].set_ylim([0, 0.8])
-    ax[0, 0].set_xlabel("Time (days)", x=1)
-    ax[0, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
-    ax[1, 0].yaxis.set_major_formatter(ScalarFormatter())
-    ax[1, 0].set_ylabel("Half-life (days)")
+    ax[0].set_title(title_milk_wwater)
+    # ax[0, 0].set_title(title_milk_DI)
+    ax[0].set_ylim([1e-2, 1e5])
+    ax[1].set_ylim([0, 0.8])
+    ax[0].set_xlabel("Time (days)", x=0.5)
+    ax[0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[1].yaxis.set_major_formatter(ScalarFormatter())
+    ax[1].set_ylabel("Half-life (days)")
 
     if prior_annotate:
-        ax[1, 0].set_xlabel(
+        ax[1].set_xlabel(
             plot.get_annotation_string(hl_model)
         )
 
-    ax[1,0].set_xticks((0,), labels = ["DI"])
-    ax[1,1].set_xticks((1,), labels = ["Wastewater"])
+    # ax[1,0].set_xticks((0,), labels = ["DI"])
+    ax[1].set_xticks((0,), labels = ["Wastewater"])
     
     output_path = output_path + "-water.pdf"
     print(f"Saving figure to {output_path}...")

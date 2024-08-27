@@ -48,7 +48,7 @@ def main(
         data_path,
         titer_mcmc_path,
         halflife_mcmc_path,
-        include_pilot=True,
+        # include_pilot=True,
     )
     titers = tidy_results["titers"]
 
@@ -62,18 +62,18 @@ def main(
         ["log_titer"],
         [
             "temperature_celsius",
-            "medium",
-            "timepoint_minutes",
+            "medium_name",
+            "timepoint_days",
             "total_positive_wells",
             "sample_id",
             "condition_id",
-            "is_pilot",
+            # "is_pilot",
         ],
     ).sort(
-        "medium",
-        "is_pilot",
+        "medium_name",
+        # "is_pilot",
         "temperature_celsius",
-        "timepoint_minutes",
+        "timepoint_days",
         "sample_id",
     )
 
