@@ -87,10 +87,146 @@ def main(
         initial_titer=10 ** pl.col("log_titer_intercept")
     )
     
-    raw_milk(titers, hls, hls_reg, hl_model, output_path)
-    surfaces(titers, hls, hls_reg, hl_model, output_path)
-    water(titers, hls, hls_reg, hl_model, output_path)
+    hl_plot(titers, hls, hls_reg, hl_model, output_path)
+    titers_plot(titers, hls, hls_reg, hl_model, output_path)
+    # raw_milk(titers, hls, hls_reg, hl_model, output_path)
+    # surfaces(titers, hls, hls_reg, hl_model, output_path)
+    # water(titers, hls, hls_reg, hl_model, output_path)
+
+def hl_plot(titers, 
+             hls,
+             hls_reg, 
+             hl_model, 
+             output_path):
     
+    hls = hls.filter(pl.col("medium_name")!="DI")
+    
+    hl_violins = plot.halflife_violins(
+        hls,
+        x_column="medium_name",
+        halflife_column="halflife_days",
+        additional_mappings=dict(
+            fillcolor="condition_id",
+            markerfacecolor="condition_id",
+        ),
+        scales=dict(
+            fillcolor=plot.condition_color_scale,
+            markerfacecolor=plot.condition_color_scale,
+            x=ScaleXCategorical(),
+        ),
+        facet=dict(
+            # col="temperature_celsius",
+            sharex=False,
+            label_cols=False,
+            color="temperature_celsius"
+        ),
+        markeredgewidth=3,
+    )
+
+    fig, ax = plt.subplots(
+        1, 1, figsize = [10, 6], 
+        sharex = None, sharey = None
+        )
+    
+    hl_violins.render(fig=fig, ax=ax)
+    fig.supxlabel(None)
+    fig.supylabel(None)
+
+    title_hls = "Half-lives"
+    ax.set_title(title_hls)
+    
+    ax.set_ylim([0, 4.5])
+    ax.set_xlabel("Medium", x=0.5)
+    ax.set_xticks((0,1,2,3), labels = ["Raw milk", "Polypropylene", "Steel", "Wastewater (22C)"])
+
+    ax.yaxis.set_major_formatter(ScalarFormatter())
+    ax.set_ylabel("Half-life (days)")
+
+    ax.grid(visible = True, which = 'major', axis = 'both')
+    
+    if prior_annotate:
+        ax.set_xlabel(
+            plot.get_annotation_string(hl_model)
+        )
+
+    output_path = output_path + "-halflives.pdf"
+    print(f"Saving figure to {output_path}...")
+    fig.savefig(output_path)
+
+
+def titers_plot(titers, 
+             hls,
+             hls_reg, 
+             hl_model, 
+             output_path):
+    
+    titers = titers.filter(pl.col("medium_name")!="DI")
+    hls_reg = hls_reg.filter(pl.col("medium_name")!="DI")
+    hls = hls.filter(pl.col("medium_name")!="DI")
+    
+    reg_plot = plot.titer_regression(
+        titers,
+        hls_reg,
+        facet={
+            "col": "medium_name",
+            "row": "temperature_celsius",
+            "sharex": True,
+            "sharey": True,
+            "label_cols": False,
+            "label_rows": False,
+            # "color": "temperature_celsius" #?
+        },
+    )
+
+    fig, ax = plt.subplots(
+        2, 4, figsize=[16, 8], sharex='all', sharey='all'
+    )
+
+    reg_plot.render(fig=fig, ax=ax[:,:]) 
+    fig.supxlabel(None)
+    fig.supylabel(None)
+
+    ax[0,0].set_title("Raw milk")
+    ax[0,1].set_title("Polypropylene")
+    ax[0,2].set_title("Steel")
+    ax[0,3].set_title("Wastewater")
+
+    ax[0,0].set_ylim([1e-1, 1e8])
+    # ax[1].set_ylim([1e-1, 1e8])
+    
+    ax[1,0].set_xlabel("Time (days)", x=0.5)
+    ax[1,1].set_xlabel("Time (days)", x=0.5)
+    ax[1,2].set_xlabel("Time (days)", x=0.5)
+    ax[1,3].set_xlabel("Time (days)", x=0.5)
+
+    ax[0,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[1,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+
+    ax0_secondary = ax[0,3].twinx()
+    ax1_secondary = ax[1,3].twinx()
+    ax0_secondary.set_ylabel("4C", rotation=270, labelpad=15)
+    ax1_secondary.set_ylabel("22C", rotation=270, labelpad=15)
+    ax0_secondary.set_yticklabels("")
+    ax1_secondary.set_yticklabels("")
+    ax0_secondary.grid(visible=False)
+    ax1_secondary.grid(visible=False)
+    # ax[0].set_xticklabels("")
+
+    # ax[2].yaxis.set_major_formatter(ScalarFormatter())
+    # ax[2].set_ylabel("Half-life (days)")
+
+    # ax[2].set_yticks((0.1, 0.3, 1, 3))
+    # ax[2].grid(visible = True, which = 'major', axis = 'both')
+    
+    # if prior_annotate:
+    #     ax[2].set_xlabel(
+    #         plot.get_annotation_string(hl_model)
+    #     )
+
+    output_path = output_path + "-titers.pdf"
+    print(f"Saving figure to {output_path}...")
+    fig.savefig(output_path)
+
 def raw_milk(titers, 
              hls,
              hls_reg, 

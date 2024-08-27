@@ -347,7 +347,7 @@ def titer_regression(
                 name="Titer posterior estimates",
                 # marker='-',
                 markersize=10,
-                # markerfacecolor="#abb0ae",
+                markerfacecolor="#abb0ae",
                 markeredgewidth=1,
                 lw=3,
                 alpha=0.7,
