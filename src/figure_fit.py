@@ -89,7 +89,6 @@ def main(
     
     raw_milk(titers, hls, hls_reg, hl_model, output_path)
     surfaces(titers, hls, hls_reg, hl_model, output_path)
-    # surfaces2(titers, hls, hls_reg, hl_model, output_path)
     water(titers, hls, hls_reg, hl_model, output_path)
     
 def raw_milk(titers, 
@@ -181,6 +180,7 @@ def surfaces(titers, hls, hls_reg, hl_model, output_path):
             "col": "temperature_celsius",
             "sharex": False,
             "label_cols": False,
+
             "label_rows": False
         },
     )
@@ -221,6 +221,7 @@ def surfaces(titers, hls, hls_reg, hl_model, output_path):
     ax[0, 1].set_title(title_22C)
     ax[0, 0].set_ylim([1e-1, 1e8])
     ax[1, 0].set_ylim([1e-1, 1e8])
+
     # ax[2, 0].set_yscale('log')
     ax[2, 0].set_ylim([0, 3])
     ax[2, 0].set_xticks((0, 1), labels = ["Polypropylene", "Steel"])
@@ -244,7 +245,7 @@ def surfaces(titers, hls, hls_reg, hl_model, output_path):
     ax[2, 0].yaxis.set_major_formatter(ScalarFormatter())
     ax[2, 0].set_ylabel("Half-life (days)")
 
-    # ax[2, 0].set_yticks((0.1, 0.3, 1, 3))
+
     ax[2, 0].grid(visible = True, which = 'major', axis = 'both')
     ax[2, 1].grid(visible = True, which = 'major', axis = 'both')
     
@@ -309,6 +310,7 @@ def surfaces2(titers, hls, hls_reg, hl_model, output_path):
     ax[0].set_title(title_surfaces)
     ax[0].set_ylim([1e-1, 1e8])
     ax[1].set_ylim([1e-1, 1e8])
+
     # ax[2].set_yscale('log')
     ax[2].set_ylim([0, 3])
     ax[2].set_xticks((0, 1), labels = ["polypropylene", "steel"])
@@ -321,6 +323,7 @@ def surfaces2(titers, hls, hls_reg, hl_model, output_path):
 
     ax[2].yaxis.set_major_formatter(ScalarFormatter())
     ax[2].set_ylabel("Half-life (days)")
+
 
     # ax[2].set_yticks((0.1, 0.3, 1, 3))
     ax[2].grid(visible = True, which = 'major', axis = 'both')
@@ -340,6 +343,7 @@ def water(titers,
              hl_model, 
              output_path):
     
+
     titers = titers.filter(pl.col("medium_name")=="wastewater")
     hls_reg = hls_reg.filter(pl.col("medium_name")=="wastewater")
     hls = hls.filter(pl.col("medium_name")=="wastewater")
@@ -376,6 +380,7 @@ def water(titers,
     )
 
     fig, ax = plt.subplots(
+
         2, 1, figsize=[8, 8], sharex=None, sharey="row"
     )
 
@@ -385,6 +390,7 @@ def water(titers,
     fig.supylabel(None)
 
     title_milk_wwater = "Wastewater"
+
     # title_milk_DI = "DI water"
 
     ax[0].set_title(title_milk_wwater)
