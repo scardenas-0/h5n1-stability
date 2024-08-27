@@ -340,7 +340,8 @@ def titer_regression(
                 mapping=dict(
                     y="display_titer", 
                     marker="detected",
-                    markerfacecolor="rep_number",
+
+                    # markerfacecolor="rep_number",
                     # color = "sample_id"
                 ),
                 name="Titer posterior estimates",
@@ -356,8 +357,9 @@ def titer_regression(
         scales=dict(
             y=scales.ScaleY("log"),
             color=condition_color_scale,
-            marker=marker_scale,
-            markerfacecolor = markerface_scale
+
+            marker=marker_scale
+            # markerfacecolor = markerface_scale
         ),
         alpha=0.75,
         **kwargs
