@@ -1,14 +1,15 @@
-# Stability of H5N1 virus in raw milk
+# Environmental stability of HPAIV H5N1 in raw milk and wastewater
 
-Franziska Kaiser, Dylan H. Morris, Arthur Wickenhagen, Reshma Mukesh, Shane Gallogly, Kwe Claude Yinda, Emmie de Wit, James O. Lloyd-Smith, Vincent J. Munster
+Franziska Kaiser, Santiago Cardenas, Kwe Claude Yinda, Reshma K. Mukesh, Missiani Ochwoto, Shane Gallogly, Arthur Wickenhagen, Kyle Bibby, Emmie de Wit, Dylan Morris, James Lloyd-Smith, Vincent Munster
 
 
 ## Repository information
-This repository accompanies the article "" (F Kaiser, DH Morris et al.). It provides code for reproducing Bayesian inference analyses from the paper and producing display figures.
+This repository accompanies the article "Environmental stability of HPAIV H5N1 in raw milk and wastewater" (F Kaiser, S Cardenas et al.). It provides code for reproducing Bayesian inference analyses from the paper and producing display figures.
 
 
 ## License and citation information
 If you use the code or data provided here, please make sure to do so in light of the project [license](LICENSE) and please cite our work as below:
+
 
 Bibtex record:
 ```
