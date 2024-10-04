@@ -5,6 +5,7 @@ import os
 import re
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import polars as pl
 from grizzlyplot.scales import ScaleXCategorical
@@ -167,7 +168,7 @@ def titers_plot(titers,
     reg_plot = plot.titer_regression(
         titers,
         hls_reg,
-        facet={
+        facet = {
             "col": "medium_name",
             "row": "temperature_celsius",
             "sharex": True,
@@ -182,7 +183,7 @@ def titers_plot(titers,
         2, 4, figsize=[16, 8], sharex='all', sharey='all'
     )
 
-    reg_plot.render(fig=fig, ax=ax[:,:]) 
+    reg_plot.render(fig=fig, ax=ax[::-1,:]) 
     fig.supxlabel(None)
     fig.supylabel(None)
 
@@ -201,15 +202,19 @@ def titers_plot(titers,
 
     ax[0,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
     ax[1,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[1,3].grid(visible=False)
+    # ax[0,3].set_xticks((0, 2, 4, 6))
+    # ax[0,3].set_xticklabels(("0", "2", "4", "6"))
+    # ax[1,3].set_xticklabels("")
 
-    ax0_secondary = ax[0,3].twinx()
-    ax1_secondary = ax[1,3].twinx()
-    ax0_secondary.set_ylabel("4C", rotation=270, labelpad=15)
-    ax1_secondary.set_ylabel("22C", rotation=270, labelpad=15)
-    ax0_secondary.set_yticklabels("")
-    ax1_secondary.set_yticklabels("")
-    ax0_secondary.grid(visible=False)
-    ax1_secondary.grid(visible=False)
+    # ax0_secondary = ax[0,3].twinx()
+    # ax1_secondary = ax[1,3].twinx()
+    # ax0_secondary.set_ylabel("22C", rotation=270, labelpad=15)
+    # ax1_secondary.set_ylabel("4C", rotation=270, labelpad=15)
+    # ax0_secondary.set_yticklabels("")
+    # ax1_secondary.set_yticklabels("")
+    # ax0_secondary.grid(visible=False)
+    # ax1_secondary.grid(visible=False)
     # ax[0].set_xticklabels("")
 
     # ax[2].yaxis.set_major_formatter(ScalarFormatter())
@@ -222,6 +227,10 @@ def titers_plot(titers,
     #     ax[2].set_xlabel(
     #         plot.get_annotation_string(hl_model)
     #     )
+    legend_elements = [Line2D([0], [0], color='orange', lw=8, label='22C'),
+                   Line2D([0], [0], color='blue', lw = 8, label='4C')]
+
+    ax[1,3].legend(handles=legend_elements, loc='center', prop = {"size": 20})
 
     output_path = output_path + "-titers.pdf"
     print(f"Saving figure to {output_path}...")

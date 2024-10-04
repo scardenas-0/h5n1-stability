@@ -67,7 +67,7 @@ condition_color_scale = scales.ScaleColorManual(
         "H5N1_cow_isolate-steel-22.0C": "orange",
         "H5N1_cow_isolate-polypropylen-4.0C": "blue",
         "H5N1_cow_isolate-polypropylen-22.0C": "orange",
-        "H5N1_cow_isolate-wastewater-22.0C": "green",
+        "H5N1_cow_isolate-wastewater-22.0C": "orange",
         "H5N1_cow_isolate-DI-22.0C": "blue",
         "k": "k",
         "orange": "orange",
