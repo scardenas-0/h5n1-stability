@@ -10,6 +10,7 @@ This repository accompanies the article "Environmental stability of HPAIV H5N1 i
 ## License and citation information
 If you use the code or data provided here, please make sure to do so in light of the project [license](LICENSE) and please cite our work as below:
 
+
 Bibtex record:
 ```
 ..
