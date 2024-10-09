@@ -114,14 +114,15 @@ def model_factory(
                 scale=t0_sd["scale"],
             ),
             # log_titer_error_distribution=dist.(),
-            log_titer_error_scale_prior=dist.Normal(
+            log_titer_error_scale_prior=dist.TruncatedNormal(
+                low=err["low"],
                 loc=err["loc"],
                 scale=err["scale"],
             ),
             assay="tcid",
             intercepts_hier=True,
             halflives_hier=False,
-            titers_overdispersed=True,
+            titers_overdispersed=False,
         )
     else:
         raise ValueError("Unknown model to fit")

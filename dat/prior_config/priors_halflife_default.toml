@@ -14,5 +14,6 @@ loc = 0
 scale = 0.25
 
 [titer_errors]
+low = 0
 loc = 0
-scale = 2
+scale = 0.5
