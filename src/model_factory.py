@@ -96,7 +96,7 @@ def model_factory(
         hl = prior_params["log_halflife_days"]
         t0_mode = prior_params["t0_log10_titer_mode"]
         t0_sd = prior_params["t0_log10_titer_sd"]
-        err = prior_params["titer_errors"]
+        err = prior_params["log10_titer_sd"]
 
         model = HalfLifeModel(
             log_halflife_distribution=dist.Normal(
@@ -114,14 +114,15 @@ def model_factory(
                 scale=t0_sd["scale"],
             ),
             # log_titer_error_distribution=dist.(),
-            log_titer_error_scale_prior=dist.Normal(
+            log_titer_error_scale_prior=dist.TruncatedNormal(
+                low=0.0,
                 loc=err["loc"],
                 scale=err["scale"],
             ),
             assay="tcid",
             intercepts_hier=True,
             halflives_hier=False,
-            titers_overdispersed=True,
+            titers_overdispersed=False,
         )
     else:
         raise ValueError("Unknown model to fit")
