@@ -90,15 +90,23 @@ def main(
     
     hl_plot(titers, hls, hls_reg, hl_model, output_path)
     titers_plot(titers, hls, hls_reg, hl_model, output_path)
-    # raw_milk(titers, hls, hls_reg, hl_model, output_path)
-    # surfaces(titers, hls, hls_reg, hl_model, output_path)
-    # water(titers, hls, hls_reg, hl_model, output_path)
 
-def hl_plot(titers, 
+def hl_plot(titers,
              hls,
              hls_reg, 
              hl_model, 
              output_path):
+    """
+    Generates and saves a violin plot of half-lives for the different conditions.
+    Parameters:
+    titers (DataFrame): DataFrame containing titer data.
+    hls (DataFrame): DataFrame containing half-life data.
+    hls_reg (DataFrame): DataFrame containing half-life regression data.
+    hl_model (Model): Model used for half-life calculations.
+    output_path (str): Path to save the generated plot.
+    Returns:
+    None
+    """
     
     hls = hls.filter(pl.col("medium_name")!="DI")
     
@@ -116,7 +124,6 @@ def hl_plot(titers,
             x=ScaleXCategorical(),
         ),
         facet=dict(
-            # col="temperature_celsius",
             sharex=False,
             label_cols=False,
             color="temperature_celsius"
@@ -154,12 +161,20 @@ def hl_plot(titers,
     print(f"Saving figure to {output_path}...")
     fig.savefig(output_path)
 
-
-def titers_plot(titers, 
+def titers_plot(titers,
              hls,
              hls_reg, 
-             hl_model, 
              output_path):
+    """
+    Generates and saves a plot of virus titers over time for different conditions.
+    Parameters:
+    titers (DataFrame): DataFrame containing virus titer data.
+    hls (DataFrame): DataFrame containing half-life data.
+    hls_reg (DataFrame): DataFrame containing regression data for half-lives.
+    output_path (str): Path to save the generated plot.
+    Returns:
+    None
+    """
     
     titers = titers.filter(pl.col("medium_name")!="DI")
     hls_reg = hls_reg.filter(pl.col("medium_name")!="DI")
@@ -175,7 +190,6 @@ def titers_plot(titers,
             "sharey": True,
             "label_cols": False,
             "label_rows": False,
-            # "color": "temperature_celsius" #?
         },
     )
 
@@ -193,7 +207,6 @@ def titers_plot(titers,
     ax[0,3].set_title("Wastewater")
 
     ax[0,0].set_ylim([1e-1, 1e8])
-    # ax[1].set_ylim([1e-1, 1e8])
     
     ax[1,0].set_xlabel("Time (days)", x=0.5)
     ax[1,1].set_xlabel("Time (days)", x=0.5)
@@ -203,359 +216,12 @@ def titers_plot(titers,
     ax[0,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
     ax[1,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
     ax[1,3].grid(visible=False)
-    # ax[0,3].set_xticks((0, 2, 4, 6))
-    # ax[0,3].set_xticklabels(("0", "2", "4", "6"))
-    # ax[1,3].set_xticklabels("")
-
-    # ax0_secondary = ax[0,3].twinx()
-    # ax1_secondary = ax[1,3].twinx()
-    # ax0_secondary.set_ylabel("22C", rotation=270, labelpad=15)
-    # ax1_secondary.set_ylabel("4C", rotation=270, labelpad=15)
-    # ax0_secondary.set_yticklabels("")
-    # ax1_secondary.set_yticklabels("")
-    # ax0_secondary.grid(visible=False)
-    # ax1_secondary.grid(visible=False)
-    # ax[0].set_xticklabels("")
-
-    # ax[2].yaxis.set_major_formatter(ScalarFormatter())
-    # ax[2].set_ylabel("Half-life (days)")
-
-    # ax[2].set_yticks((0.1, 0.3, 1, 3))
-    # ax[2].grid(visible = True, which = 'major', axis = 'both')
-    
-    # if prior_annotate:
-    #     ax[2].set_xlabel(
-    #         plot.get_annotation_string(hl_model)
-    #     )
     legend_elements = [Line2D([0], [0], color='orange', lw=8, label='22C'),
                    Line2D([0], [0], color='blue', lw = 8, label='4C')]
 
     ax[1,3].legend(handles=legend_elements, loc='center', prop = {"size": 20})
 
     output_path = output_path + "-titers.pdf"
-    print(f"Saving figure to {output_path}...")
-    fig.savefig(output_path)
-
-def raw_milk(titers, 
-             hls,
-             hls_reg, 
-             hl_model, 
-             output_path):
-    
-    hls = hls.filter(medium_name="milk")
-    titers = titers.filter(medium_name="milk")
-    hls_reg = hls_reg.filter(medium_name="milk")
-    
-    reg_plot = plot.titer_regression(
-        titers,
-        hls_reg,
-        facet={
-            "col": "temperature_celsius",
-            "sharex": False,
-            "label_cols": False,
-        },
-    )
-
-    hl_plot = plot.halflife_violins(
-        hls,
-        x_column="condition_id",
-        halflife_column="halflife_days",
-        additional_mappings=dict(
-            fillcolor="condition_id",
-            markerfacecolor="condition_id",
-        ),
-        scales=dict(
-            fillcolor=plot.condition_color_scale,
-            markerfacecolor=plot.condition_color_scale,
-            x=ScaleXCategorical(),
-        ),
-        facet=dict(
-            col="temperature_celsius",
-            sharex=False,
-            label_cols=False,
-        ),
-        markeredgewidth=3,
-    )
-
-    fig, ax = plt.subplots(
-        2, 2, figsize=[10, 8], sharex=None, sharey="row"
-    )
-
-    reg_plot.render(fig=fig, ax=ax[0, ::])
-    hl_plot.render(fig=fig, ax=ax[1, ::])
-    fig.supxlabel(None)
-    fig.supylabel(None)
-
-    title_milk_4C = "4C"
-    title_milk_22C = "22C"
-
-    ax[0, 0].set_title(title_milk_4C)
-    ax[0, 1].set_title(title_milk_22C)
-    ax[0, 0].set_ylim([1e-1, 1e8])
-    ax[1, 0].set_ylim([0, 4.5])
-    ax[0, 0].set_xlabel("Time (days)", x=1)
-    ax[0, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
-
-    ax[1, 0].yaxis.set_major_formatter(ScalarFormatter())
-    ax[1, 0].set_ylabel("Half-life (days)")
-
-    if prior_annotate:
-        ax[1, 0].set_xlabel(
-            plot.get_annotation_string(hl_model)
-        )
-
-    ax[1, 0].set_xticks((0,), labels = ["4C"])
-    ax[1, 1].set_xticks((1,), labels = ["22C"])
-    
-    output_path = output_path + "-milk.pdf"
-    
-    print(f"Saving figure to {output_path}...")
-    fig.savefig(output_path)
-
-def surfaces(titers, hls, hls_reg, hl_model, output_path):
-    titers = titers.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
-    hls_reg = hls_reg.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
-    hls = hls.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
-    
-    reg_plot = plot.titer_regression(
-        titers,
-        hls_reg,
-        facet={
-            "row": "medium_name",
-            "col": "temperature_celsius",
-            "sharex": False,
-            "label_cols": False,
-
-            "label_rows": False
-        },
-    )
-    
-    hl_plot = plot.halflife_violins(hls,
-        x_column= "medium_name",
-        halflife_column="halflife_days",
-        additional_mappings=dict(
-            fillcolor="condition_id",
-            markerfacecolor="condition_id",
-        ),
-        scales=dict(
-            fillcolor=plot.condition_color_scale,
-            markerfacecolor=plot.condition_color_scale,
-            x=ScaleXCategorical(),
-        ),
-        facet=dict(
-            col="temperature_celsius",
-            sharex=False,
-            label_cols=False,
-        ),
-        markeredgewidth=3,
-    )
-
-    fig, ax = plt.subplots(
-        3, 2, figsize=[10, 12], sharex=None, sharey='row'
-    )
-
-    reg_plot.render(fig=fig, ax=ax[:2,::]) 
-    hl_plot.render(fig=fig, ax=ax[2, ::])
-    fig.supxlabel(None)
-    fig.supylabel(None)
-
-    title_4C = "4C"
-    title_22C = "22C"
-
-    ax[0, 0].set_title(title_4C)
-    ax[0, 1].set_title(title_22C)
-    ax[0, 0].set_ylim([1e-1, 1e8])
-    ax[1, 0].set_ylim([1e-1, 1e8])
-
-    # ax[2, 0].set_yscale('log')
-    ax[2, 0].set_ylim([0, 3])
-    ax[2, 0].set_xticks((0, 1), labels = ["Polypropylene", "Steel"])
-    ax[2, 1].set_xticks((0, 1), labels = ["Polypropylene", "Steel"])
-    
-    ax[1, 0].set_xlabel("Time (days)", x=1)
-    ax[0, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
-    ax[1, 0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
-    ax0_secondary = ax[0,1].twinx()
-    ax1_secondary = ax[1,1].twinx()
-    ax0_secondary.set_ylabel("Polypropylene", rotation=270, labelpad=15)
-    ax1_secondary.set_ylabel("Steel", rotation=270, labelpad=15)
-    ax0_secondary.set_yticklabels("")
-    ax1_secondary.set_yticklabels("")
-    ax0_secondary.grid(visible=False)
-    ax1_secondary.grid(visible=False)
-    
-    ax[0, 0].set_xticklabels("")
-    ax[0, 1].set_xticklabels("")
-
-    ax[2, 0].yaxis.set_major_formatter(ScalarFormatter())
-    ax[2, 0].set_ylabel("Half-life (days)")
-
-
-    ax[2, 0].grid(visible = True, which = 'major', axis = 'both')
-    ax[2, 1].grid(visible = True, which = 'major', axis = 'both')
-    
-    if prior_annotate:
-        ax[2, 0].set_xlabel(
-            plot.get_annotation_string(hl_model)
-        )
-
-    output_path = output_path + "-surfaces.pdf"
-    print(f"Saving figure to {output_path}...")
-    fig.savefig(output_path)
-
-def surfaces2(titers, hls, hls_reg, hl_model, output_path):
-    titers = titers.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
-    hls_reg = hls_reg.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
-    hls = hls.filter((pl.col("medium_name")=="steel") | (pl.col("medium_name")=="polypropylen"))
-    
-    reg_plot = plot.titer_regression(
-        titers,
-        hls_reg,
-        facet={
-            "row": "medium_name",
-            # "col": "temperature_celsius",
-            "sharex": False,
-            "label_cols": False,
-            # "color": "temperature_celsius" #?
-        },
-    )
-    
-    hl_plot = plot.halflife_violins(hls,
-        x_column= "medium_name",
-        halflife_column="halflife_days",
-        additional_mappings=dict(
-            fillcolor="condition_id",
-            markerfacecolor="condition_id",
-        ),
-        scales=dict(
-            fillcolor=plot.condition_color_scale,
-            markerfacecolor=plot.condition_color_scale,
-            x=ScaleXCategorical(),
-        ),
-        facet=dict(
-            # col="temperature_celsius",
-            sharex=False,
-            label_cols=False,
-            color = "temperature_celsius"
-        ),
-        markeredgewidth=3,
-    )
-
-    fig, ax = plt.subplots(
-        3, 1, figsize=[10, 12], sharex=None, sharey='row'
-    )
-
-    reg_plot.render(fig=fig, ax=ax[:2]) 
-    hl_plot.render(fig=fig, ax=ax[2])
-    fig.supxlabel(None)
-    fig.supylabel(None)
-
-    title_surfaces = "Surfaces"
-
-    ax[0].set_title(title_surfaces)
-    ax[0].set_ylim([1e-1, 1e8])
-    ax[1].set_ylim([1e-1, 1e8])
-
-    # ax[2].set_yscale('log')
-    ax[2].set_ylim([0, 3])
-    ax[2].set_xticks((0, 1), labels = ["polypropylene", "steel"])
-    # ax[2, 1].set_xticks((0, 1), labels = ["polypropylene", "steel"])
-    
-    ax[1].set_xlabel("Time (days)", x=0.5)
-    ax[0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
-    ax[1].set_ylabel("Virus titer (TCID$_{50}$/mL)")
-    ax[0].set_xticklabels("")
-
-    ax[2].yaxis.set_major_formatter(ScalarFormatter())
-    ax[2].set_ylabel("Half-life (days)")
-
-
-    # ax[2].set_yticks((0.1, 0.3, 1, 3))
-    ax[2].grid(visible = True, which = 'major', axis = 'both')
-    
-    if prior_annotate:
-        ax[2].set_xlabel(
-            plot.get_annotation_string(hl_model)
-        )
-
-    output_path = output_path + "-surfaces-2.pdf"
-    print(f"Saving figure to {output_path}...")
-    fig.savefig(output_path)
-
-def water(titers, 
-             hls,
-             hls_reg, 
-             hl_model, 
-             output_path):
-    
-
-    titers = titers.filter(pl.col("medium_name")=="wastewater")
-    hls_reg = hls_reg.filter(pl.col("medium_name")=="wastewater")
-    hls = hls.filter(pl.col("medium_name")=="wastewater")
-    
-    reg_plot = plot.titer_regression(
-        titers,
-        hls_reg,
-        facet={
-            "col": "medium_name",
-            "sharex": False,
-            "label_cols": False,
-        },
-    )
-
-    hl_plot = plot.halflife_violins(
-        hls,
-        x_column="condition_id",
-        halflife_column="halflife_days",
-        additional_mappings=dict(
-            fillcolor="condition_id",
-            markerfacecolor="condition_id",
-        ),
-        scales=dict(
-            fillcolor=plot.condition_color_scale,
-            markerfacecolor=plot.condition_color_scale,
-            x=ScaleXCategorical(),
-        ),
-        facet=dict(
-            col="medium_name",
-            sharex=False,
-            label_cols=False,
-        ),
-        markeredgewidth=3,
-    )
-
-    fig, ax = plt.subplots(
-
-        2, 1, figsize=[8, 8], sharex=None, sharey="row"
-    )
-
-    reg_plot.render(fig=fig, ax=ax[0])
-    hl_plot.render(fig=fig, ax=ax[1])
-    fig.supxlabel(None)
-    fig.supylabel(None)
-
-    title_milk_wwater = "Wastewater"
-
-    # title_milk_DI = "DI water"
-
-    ax[0].set_title(title_milk_wwater)
-    # ax[0, 0].set_title(title_milk_DI)
-    ax[0].set_ylim([1e-2, 1e5])
-    ax[1].set_ylim([0, 0.8])
-    ax[0].set_xlabel("Time (days)", x=0.5)
-    ax[0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
-    ax[1].yaxis.set_major_formatter(ScalarFormatter())
-    ax[1].set_ylabel("Half-life (days)")
-
-    if prior_annotate:
-        ax[1].set_xlabel(
-            plot.get_annotation_string(hl_model)
-        )
-
-    # ax[1,0].set_xticks((0,), labels = ["DI"])
-    ax[1].set_xticks((0,), labels = ["Wastewater"])
-    
-    output_path = output_path + "-water.pdf"
     print(f"Saving figure to {output_path}...")
     fig.savefig(output_path)
 

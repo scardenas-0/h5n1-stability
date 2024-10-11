@@ -96,7 +96,7 @@ def model_factory(
         hl = prior_params["log_halflife_days"]
         t0_mode = prior_params["t0_log10_titer_mode"]
         t0_sd = prior_params["t0_log10_titer_sd"]
-        err = prior_params["titer_errors"]
+        err = prior_params["log10_titer_sd"]
 
         model = HalfLifeModel(
             log_halflife_distribution=dist.Normal(
@@ -115,7 +115,7 @@ def model_factory(
             ),
             # log_titer_error_distribution=dist.(),
             log_titer_error_scale_prior=dist.TruncatedNormal(
-                low=err["low"],
+                low=0.0,
                 loc=err["loc"],
                 scale=err["scale"],
             ),
