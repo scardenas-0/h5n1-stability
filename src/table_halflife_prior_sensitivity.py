@@ -33,17 +33,17 @@ def main(
     """
 
     all_tabs = []
-    pattern = r"table_halflives_(.*).tsv"
+    pattern = r"table_halflives.tsv"
 
     for tab_path in table_paths:
-        tab = pl.read_csv(tab_path, separator=separator)
-        prior_set_name = re.search(
-            pattern, os.path.basename(tab_path)
-        ).group(1)
+        tab = pl.read_csv(tab_path, separator = separator)
+        # prior_set_name = re.search(
+        #     pattern, os.path.basename(tab_path)
+        # ).group(1)
 
-        tab = tab.with_columns(
-            prior_parameter_set=pl.lit(prior_set_name)
-        )
+        # tab = tab.with_columns(
+        #     prior_parameter_set=pl.lit(prior_set_name)
+        # )
 
         all_tabs.append(tab)
 

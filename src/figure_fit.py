@@ -20,8 +20,6 @@ def main(
     titer_mcmc_path: str,
     halflife_mcmc_path: str,
     output_path: str,
-    separator: str = "\t",
-    prior_annotate: bool = True,
 ) -> None:
     """
     Create the main text display figure,
@@ -47,14 +45,6 @@ def main(
     output_path : str
         Path to which to save the figure.
 
-    separator : str
-        Delimiter for the delimited text
-        file specified in data_path. Default
-        `\t` (tab-delimited).
-
-    prior_annotate : bool
-       Annotate the plot with key prior values?
-       Boolean, default True.
     """
     print(
         f"Creating figure {os.path.basename(output_path)}..."
@@ -88,20 +78,14 @@ def main(
         initial_titer=10 ** pl.col("log_titer_intercept")
     )
     
-    hl_plot(titers, hls, hls_reg, hl_model, output_path)
-    titers_plot(titers, hls, hls_reg, hl_model, output_path)
+    hl_plot(hls, output_path)
+    titers_plot(titers, hls, hls_reg, output_path)
 
-def hl_plot(titers,
-             hls,
-             hls_reg, 
-             hl_model, 
-             output_path):
+def hl_plot(hls, output_path):
     """
     Generates and saves a violin plot of half-lives for the different conditions.
     Parameters:
-    titers (DataFrame): DataFrame containing titer data.
     hls (DataFrame): DataFrame containing half-life data.
-    hls_reg (DataFrame): DataFrame containing half-life regression data.
     hl_model (Model): Model used for half-life calculations.
     output_path (str): Path to save the generated plot.
     Returns:
@@ -152,19 +136,14 @@ def hl_plot(titers,
 
     ax.grid(visible = True, which = 'major', axis = 'both')
     
-    if prior_annotate:
-        ax.set_xlabel(
-            plot.get_annotation_string(hl_model)
-        )
-
     output_path = output_path + "-halflives.pdf"
     print(f"Saving figure to {output_path}...")
     fig.savefig(output_path)
 
 def titers_plot(titers,
-             hls,
-             hls_reg, 
-             output_path):
+                hls,
+                hls_reg, 
+                output_path):
     """
     Generates and saves a plot of virus titers over time for different conditions.
     Parameters:
@@ -262,27 +241,13 @@ if __name__ == "__main__":
         type=str,
         help=("Path to save the generated figure."),
     )
-    parser.add_argument(
-        "-s",
-        "--separator",
-        type=str,
-        help=(
-            "Separator for the delimited text file containing "
-            "the data (specified in data_path)"
-        ),
-        default="\t",
-    )
     parsed = vars(parser.parse_args())
     # set seed for reproducibility
     # (since we use random draws)
     np.random.seed(52367)
-    # do not annotate main text figure
-    prior_annotate = "default" not in parsed["output_path"]
     main(
         parsed["data_path"],
         parsed["titer_mcmc_path"],
         parsed["halflife_mcmc_path"],
         parsed["output_path"],
-        separator=parsed["separator"],
-        prior_annotate=prior_annotate,
     )

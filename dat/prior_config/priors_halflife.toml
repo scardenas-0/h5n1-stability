@@ -13,7 +13,6 @@ scale = 4
 loc = 0
 scale = 0.25
 
-[titer_errors]
-low = 0
+[log10_titer_sd] # TruncatedNormal, min 0
 loc = 0
 scale = 0.5
