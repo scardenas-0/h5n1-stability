@@ -72,6 +72,10 @@ If you want to do things piecewise, typing `make <filename>` for any of the file
 Some shortcuts are available, including:
 
 - `make clean` removes all generated files, including even cleaned data, leaving only source code (though it does not uninstall packages)
+- `make data` cleans raw data to produce cleaned data
+- `make chains` produces all Markov Chain Monte Carlo output ("MCMC chains)
+- `make figures` produces all figures
+- `make tables` produces all tables
 
 ## Note
 While pseudorandom number generator seeds are set for reproducibility, numerical results may not be exactly identical depending on operating system and setup.

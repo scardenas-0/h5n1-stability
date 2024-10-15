@@ -39,24 +39,17 @@ TABLES := $(OUT)/tables
 DIAGNOSTICS := $(TABLES)/diagnostics
 
 
-TITER_PRIORS := $(shell find $(PRIOR_CONFIG) -name \
-   priors_individual_titer_*.toml)
-HALFLIFE_PRIORS := $(shell find $(PRIOR_CONFIG) -name \
-   priors_halflife_*.toml)
+TITER_PRIORS := $(priors_individual_titer.toml)
+HALFLIFE_PRIORS := $(priors_halflife.toml)
 ALL_PRIORS := $(TITER_PRIORS) $(HALFLIFE_PRIORS)
 
-TITER_MODEL_NAMES := $(patsubst \
-   $(PRIOR_CONFIG)/priors_individual_titer_%.toml, %, $(TITER_PRIORS))
-HALFLIFE_MODEL_NAMES := $(patsubst \
-   $(PRIOR_CONFIG)/priors_halflife_%.toml, %, $(HALFLIFE_PRIORS))
+TITER_MODEL_NAMES := $(PRIOR_CONFIG)/priors_individual_titer
+HALFLIFE_MODEL_NAMES := $(PRIOR_CONFIG)/priors_halflife
 ALL_MODEL_NAMES := $(TITER_MODEL_NAMES) $(HALFLIFE_MODEL_NAMES)
-FIGURE_NAMES := milk surfaces surfaces-2 water
+FIGURE_NAMES := titers halflives
 
 MCMC_CONFIG := $(DAT)/mcmc_config.toml
 ALL_CONFIGS := $(ALL_PRIORS) $(MCMC_CONFIG)
-
-# RAW_DATA_63C := $(RAW)/data_63C.xlsx
-# RAW_DATA_72C := $(RAW)/data_72C.xlsx
 
 RAW_DATA_MILK := $(RAW)/stability_raw_milk_cow_isolate.xlsx
 RAW_DAT_SURFACE := $(RAW)/stability_surface.xlsx
@@ -64,29 +57,25 @@ RAW_DAT_WWATER := $(RAW)/wastewater-data.xlsx
 CLEANED_DATA := $(CLEANED)/data.tsv
 
 DEFAULT_CHAIN_DEPS := $(CLEANED_DATA) $(MCMC_CONFIG)
-DEFAULT_TITER_CHAINS = $(CHAINS)/individual_titer_default.pickle
-DEFAULT_HALFLIFE_CHAINS = $(CHAINS)/halflife_default.pickle
-ALL_TITER_CHAINS := $(patsubst %, $(CHAINS)/individual_titer_%.pickle, \
-   $(TITER_MODEL_NAMES))
-ALL_HALFLIFE_CHAINS := $(patsubst %, $(CHAINS)/halflife_%.pickle, \
-   $(HALFLIFE_MODEL_NAMES))
+DEFAULT_TITER_CHAINS = $(CHAINS)/individual_titer.pickle
+DEFAULT_HALFLIFE_CHAINS = $(CHAINS)/halflife.pickle
+ALL_TITER_CHAINS := $(CHAINS)/individual_titer.pickle
+ALL_HALFLIFE_CHAINS := $(CHAINS)/halflife.pickle
 ALL_CHAINS := $(ALL_TITER_CHAINS) $(ALL_HALFLIFE_CHAINS)
 
 DEFAULT_FIGURE_DEPS := $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) \
    $(DEFAULT_HALFLIFE_CHAINS)
 FIT_FIGURES := $(patsubst %, \
-   $(FIGURES)/figure-fit-default-%.pdf, \
+   $(FIGURES)/figure-fit-%.pdf, \
    $(FIGURE_NAMES))
-PRIOR_CHECK_FIGURES := $(patsubst %, \
-   $(FIGURES)/figure-prior-check-%.pdf, \
-   $(FIGURE_NAMES))
+# PRIOR_CHECK_FIGURES := $(patsubst %, \
+#    $(FIGURES)/figure-prior-check-%.pdf, \
+#    $(FIGURE_NAMES))
 
-RUN_FIGURES := $(FIGURES)/figure-fit-default
-# ALL_FIGURES := $(FIT_FIGURES) $(PRIOR_CHECK_FIGURES)
+RUN_FIGURES := $(FIGURES)/figure-fit
 
 TABLE_TITERS := $(TABLES)/titers.tsv
-HALFLIFE_TABLES := $(patsubst %, $(TABLES)/table_halflives_%.tsv, \
-   $(HALFLIFE_MODEL_NAMES))
+HALFLIFE_TABLES := $(TABLES)/table_halflives.tsv
 SENSITIVITY_TABLES := $(TABLES)/table_halflife_prior_sensitivity.tsv
 
 DIAGNOSTICS_RAW := $(patsubst $(CHAINS)/%.pickle, \
@@ -106,23 +95,23 @@ $(CLEANED_DATA): $(SRC)/clean_data.py $(RAW_DATA_MILK) $(RAW_DAT_SURFACE) $(RAW_
 > $(MKDIR) $(CLEANED)
 > $(PYTHON) $^ $@
 
-
-$(CHAINS)/individual_titer_%.pickle: $(SRC)/fit_model.py $(DEFAULT_CHAIN_DEPS) $(PRIOR_CONFIG)/priors_individual_titer_%.toml
+$(CHAINS)/individual_titer.pickle: $(SRC)/fit_model.py $(DEFAULT_CHAIN_DEPS) \
+   $(PRIOR_CONFIG)/priors_individual_titer.toml
 > $(MKDIR) $(CHAINS)
 > $(PYTHON) $^ individual_titer -o $@
 
-$(CHAINS)/halflife_%.pickle: $(SRC)/fit_model.py $(DEFAULT_CHAIN_DEPS) \
-   $(PRIOR_CONFIG)/priors_halflife_%.toml
+$(CHAINS)/halflife.pickle: $(SRC)/fit_model.py $(DEFAULT_CHAIN_DEPS) \
+   $(PRIOR_CONFIG)/priors_halflife.toml
 > $(MKDIR) $(CHAINS)
 > $(PYTHON) $^ halflife -o $@
 
-$(FIGURES)/figure-fit-default: $(SRC)/figure_fit.py $(CLEANED_DATA) \
-   $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife_default.pickle
+$(FIGURES)/figure-fit: $(SRC)/figure_fit.py $(CLEANED_DATA) \
+   $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife.pickle
 > $(MKDIR) $(FIGURES)
 > $(PYTHON) $^ $@
 
-$(FIGURES)/figure-prior-check-%: $(SRC)/figure_prior_check.py \
-   $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife_%.pickle
+$(FIGURES)/figure-prior-check: $(SRC)/figure_prior_check.py \
+   $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife.pickle
 > $(MKDIR) $(FIGURES)
 > $(PYTHON) $^ $@
 
@@ -130,8 +119,8 @@ $(TABLE_TITERS): $(SRC)/table_titers.py $(DEFAULT_TABLE_DEPS)
 > $(MKDIR) $(TABLES)
 > $(PYTHON) $^ $@
 
-$(TABLES)/table_halflives_%.tsv: $(SRC)/table_halflives.py \
-  $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife_%.pickle
+$(TABLES)/table_halflives.tsv: $(SRC)/table_halflives.py \
+  $(CLEANED_DATA) $(DEFAULT_TITER_CHAINS) $(CHAINS)/halflife.pickle
 > $(MKDIR) $(TABLES)
 > $(PYTHON) $^ $@
 
@@ -140,15 +129,15 @@ $(TABLES)/table_halflife_prior_sensitivity.tsv: \
 > $(MKDIR) $(TABLES)
 > $(PYTHON) $^ -o $@
 
-$(DIAGNOSTICS)/individual_titer_%_mcmc_diagnostics.tsv: \
+$(DIAGNOSTICS)/individual_titer_mcmc_diagnostics.tsv: \
    $(SRC)/table_diagnostics.py \
-   $(CHAINS)/individual_titer_%.pickle
+   $(CHAINS)/individual_titer.pickle
 > $(MKDIR) $(DIAGNOSTICS)
 > $(PYTHON) $^ $@
 
-$(DIAGNOSTICS)/halflife_%_mcmc_diagnostics.tsv: \
+$(DIAGNOSTICS)/halflife_mcmc_diagnostics.tsv: \
    $(SRC)/table_diagnostics.py \
-   $(CHAINS)/halflife_%.pickle
+   $(CHAINS)/halflife.pickle
 > $(MKDIR) $(DIAGNOSTICS)
 > $(PYTHON) $^ $@
 
@@ -158,7 +147,7 @@ $(DIAGNOSTICS)/%_extrema.tsv: $(SRC)/table_diagnostic_extrema.py \
 > $(PYTHON) $^ $@
 
 
-ALL_TARGETS := $(CLEANED_DATA) $(ALL_CHAINS) $(ALL_FIGURES) $(ALL_TABLES)
+ALL_TARGETS := $(CLEANED_DATA) $(ALL_CHAINS) $(FIT_FIGURES) $(ALL_TABLES)
 all: $(ALL_TARGETS)
 data: $(CLEANED_DATA)
 chains: $(ALL_CHAINS)
