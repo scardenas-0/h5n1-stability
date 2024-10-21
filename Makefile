@@ -52,7 +52,7 @@ MCMC_CONFIG := $(DAT)/mcmc_config.toml
 ALL_CONFIGS := $(ALL_PRIORS) $(MCMC_CONFIG)
 
 RAW_DATA_MILK := $(RAW)/stability_raw_milk_cow_isolate.xlsx
-RAW_DAT_SURFACE := $(RAW)/stability_surface.xlsx
+RAW_DAT_SURFACE := $(RAW)/stability_on_surface_cow_isolate.xlsx
 RAW_DAT_WWATER := $(RAW)/wastewater-data.xlsx
 CLEANED_DATA := $(CLEANED)/data.tsv
 
