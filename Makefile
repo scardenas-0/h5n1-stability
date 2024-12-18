@@ -51,9 +51,10 @@ FIGURE_NAMES := titers halflives
 MCMC_CONFIG := $(DAT)/mcmc_config.toml
 ALL_CONFIGS := $(ALL_PRIORS) $(MCMC_CONFIG)
 
-RAW_DATA_MILK := $(RAW)/stability_raw_milk_cow_isolate.xlsx
+RAW_DAT_MILK := $(RAW)/stability_raw_milk_cow_isolate.xlsx
 RAW_DAT_SURFACE := $(RAW)/stability_on_surface_cow_isolate.xlsx
 RAW_DAT_WWATER := $(RAW)/wastewater-data.xlsx
+RAW_DAT_NEW := $(RAW)/data_rerun.xlsx
 CLEANED_DATA := $(CLEANED)/data.tsv
 
 DEFAULT_CHAIN_DEPS := $(CLEANED_DATA) $(MCMC_CONFIG)
@@ -91,7 +92,7 @@ DEFAULT_TABLE_DEPS := $(DEFAULT_FIGURE_DEPS)
 ########
 # Rules
 ########
-$(CLEANED_DATA): $(SRC)/clean_data.py $(RAW_DATA_MILK) $(RAW_DAT_SURFACE) $(RAW_DAT_WWATER)
+$(CLEANED_DATA): $(SRC)/clean_data.py $(RAW_DAT_MILK) $(RAW_DAT_SURFACE) $(RAW_DAT_WWATER) $(RAW_DAT_NEW)
 > $(MKDIR) $(CLEANED)
 > $(PYTHON) $^ $@
 

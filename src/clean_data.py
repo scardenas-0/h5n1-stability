@@ -232,7 +232,7 @@ def parse_duration_to_days(duration_raw: str) -> float:
         '<number><1 letter unit>', potentially with leading
         and/or trailing whitespace, and potentially with
         whitespace between the duration and the unit. Valid examples
-        include: '24h', '3d', '6   h ', ' 5 d ', and ' 22h'.
+        include: '24h', '3d', '6h ', ' 5 d ', and ' 22h'.
 
     Returns
     -------
@@ -308,10 +308,11 @@ def parse_temperature_to_celsius(
         )
     return float(value) * conversion
 
-def get_row_indices(excel_file_path, 
-                    sheet_name, 
-                    **kwargs
-                    ) -> Iterable[int]:
+def get_row_indices(
+        excel_file_path,
+        sheet_name,
+        **kwargs
+    ) -> Iterable[int]:
     """
     Return an iterable of the row indices of a given sheet 
     that correspond to the first row of data of each time
@@ -329,9 +330,11 @@ def get_row_indices(excel_file_path,
         Additional keyword arguments passed to
         pandas.read_excel()
     """
-    sheet_df = pd.read_excel(excel_file_path, 
-                             sheet_name=sheet_name,
-                             **kwargs)
+    sheet_df = pd.read_excel(
+        excel_file_path,
+        sheet_name = sheet_name,
+        **kwargs
+    )
     A_mask = sheet_df.iloc[:,0]=="A"
     return [index for index, bool_A in enumerate(A_mask) if bool_A]
 
@@ -395,14 +398,18 @@ def parse_titration_data(
     A ValueError if validation fails.
     """
     xlsx_file = pd.ExcelFile(excel_file_path)
+
+    medium_vec = ["DI", "wastewater", "steel", "polypropylen", "raw", "whole", "skim", "fat", "rubber"]
     
     sheet_results =  [None] * len(xlsx_file.sheet_names)
     for i_sheet, sheet_name in enumerate(xlsx_file.sheet_names):
         
-        plate_header_rows = get_row_indices(excel_file_path, 
-                                                       sheet_name,
-                                                       **kwargs)
-            
+        plate_header_rows = get_row_indices(
+            excel_file_path,
+            sheet_name,
+            **kwargs
+        )
+
         results = [None] * len(plate_header_rows)
         for i_plate, header_row in enumerate(plate_header_rows):
             if verbose:
@@ -425,18 +432,22 @@ def parse_titration_data(
             timetemp = meta.iloc[0,0]
             timepoint = timetemp.strip()
             if not temperature:
-                temp = sheet_name.split()[0]
-                
-                if not medium:
-                    med = sheet_name.split()[1]
+                if "22" in sheet_name:
+                    temp = "22C"
+                elif "4" in sheet_name:
+                    temp = "4C"
                 else:
-                    med = medium
+                    print("Temperature not found")
             else:
                 temp = temperature
-                med = sheet_name.split()[0]
+
+            if not medium:
+                med = next(s for s in medium_vec if s in sheet_name)
+            else:
+                med = medium
             
             plate = clean_single_plate(plate).with_columns(
-                timepoint_days=pl.lit(
+                timepoint_days = pl.lit(
                     parse_duration_to_days(timepoint)
                 ),
                 temperature_celsius=pl.lit(
@@ -469,11 +480,12 @@ def main(
     excel_file_path_milk: str,
     excel_file_path_surface: str,
     excel_file_path_wastewater: str,
+    excel_file_path_rerun: str,
     save_path: str,
     separator="\t",
 ) -> None:
     """
-    Read in three files worth of Excel formatted
+    Read in four files worth of Excel formatted
     titration data, clean them, and save them as a
     single tidy delimited text file (default .tsv).
 
@@ -490,6 +502,11 @@ def main(
     excel_file_path_wastewater: str
         Path to the excel file to read in with 
         wastewater and deionized water data
+    
+    excel_file_path_rerun: str
+        Path to the excel file to read in with
+        new data of milk with different fat contents,
+        and rubber surface data
 
     save_path : str
         path to save the output.
@@ -509,11 +526,20 @@ def main(
     virus_name_all = "H5N1_cow_isolate"
     verbose_all = False
     
+    parsed_rerun = parse_titration_data(
+        excel_file_path_rerun,
+        metadata_row_offset=-1,
+        sample_id_prefix="sample",
+        virus_name = virus_name_all,
+        verbose = verbose_all,
+        usecols="B:O",
+    )
+
     parsed_milk = parse_titration_data(
             excel_file_path_milk,
             metadata_row_offset=-1,
             sample_id_prefix="sample",
-            medium="milk",
+            # medium="milk",
             virus_name = virus_name_all,
             verbose = verbose_all,
             usecols=usecols,
@@ -539,7 +565,7 @@ def main(
     )
 
     parsed = pl.concat(
-        [parsed_milk, parsed_surface, parsed_wastewater]
+        [parsed_milk, parsed_surface, parsed_wastewater, parsed_rerun]
     )
     
     # filter out wells that weren't used
@@ -614,6 +640,15 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "excel_file_path_rerun",
+        type=str,
+        help=(
+            "Path to the Excel file to read in and clean "
+            "containing new data of milk with different "
+            "fat contents, and rubber surface"
+        ),
+    )
+    parser.add_argument(
         "save_path",
         type=str,
         help="Path to save the cleaned data",
@@ -629,6 +664,7 @@ if __name__ == "__main__":
         parsed["excel_file_path_milk"],
         parsed["excel_file_path_surface"],
         parsed["excel_file_path_wastewater"],
+        parsed["excel_file_path_rerun"],
         parsed["save_path"],
         separator=parsed["separator"],
     )

@@ -59,6 +59,12 @@ default_ylab_pad = 20
 marker_scale = scales.ScaleDiscreteManual(
     mapping={True: "o", False: "v"}
 )
+markerface_scale = scales.ScaleColorManual(
+    mapping = {
+        1: "#723D5D",
+        2: "#D47542",
+        3: "#579E6D"}
+)
 condition_color_scale = scales.ScaleColorManual(
     mapping={
         "H5N1_cow_isolate-milk-4.0C": "blue", # "#094B93",
@@ -73,7 +79,13 @@ condition_color_scale = scales.ScaleColorManual(
         "orange": "orange",
         1: "#723D5D",
         2: "#D47542",
-        3: "#579E6D"
+        3: "#579E6D",
+        4: "blue",
+        22: "orange",
+        "22C": "orange",
+        "4C": "blue",
+        "22": "orange",
+        "4": "blue"
     }
 )
 
@@ -111,15 +123,10 @@ def get_figsize(
     return [width, width / aspect]
 
 
-marker_scale = scales.ScaleDiscreteManual(
-    mapping={True: "o", 
-             False: "v"})
-markerface_scale = scales.ScaleColorManual(
-    mapping = {
-        1: "#723D5D",
-        2: "#D47542",
-        3: "#579E6D"}
-)
+# marker_scale = scales.ScaleDiscreteManual(
+#     mapping={True: "o", 
+#              False: "v"})
+
 
 
 # Helper functions to avoid code repetition
@@ -331,7 +338,7 @@ def titer_regression(
                     yintercept="initial_titer",
                     rate="exp_rate",
                     group="sample_id",
-                    color="condition_id",
+                    color="temperature_celsius",
                 ),
                 name="Predicted decay",
                 # color="orange"
@@ -429,7 +436,7 @@ def halflife_violins(
                 violinwidth=1,
                 linecolor="none",
                 norm="max",
-                color="condition_id",
+                color="temperature_celsius",
                 trimtails=0.005,
             ),
             geoms.GeomPointIntervalY(
