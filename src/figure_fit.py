@@ -77,10 +77,226 @@ def main(
     ).with_columns(
         initial_titer=10 ** pl.col("log_titer_intercept")
     )
+
+    old_titers_liquid_plot(titers, hls, hls_reg, output_path)
+    old_titers_surface_plot(titers, hls, hls_reg, output_path)
+    old_hl_plot(hls, output_path)
     
     bulk_milk_plot(titers, hls, hls_reg, output_path)
     surface_plot(titers, hls, hls_reg, output_path)
     hl_plot(hls, output_path)
+
+def old_titers_liquid_plot(
+        titers,
+        hls,
+        hls_reg,
+        output_path
+    ):
+    media_names = ["raw", "wastewater"]
+    
+    titers = (
+        titers.filter(pl.col("medium_name").is_in(media_names))
+            .with_columns(pl.col("medium_name").cast(pl.Enum(media_names)))
+            .sort("medium_name")
+    )
+
+    hls_reg = (
+        hls_reg.filter(pl.col("medium_name").is_in(media_names))
+            .with_columns(pl.col("medium_name").cast(pl.Enum(media_names)))
+            .sort("medium_name")
+    )
+
+    hls = (
+        hls.filter(pl.col("medium_name").is_in(media_names))
+            .with_columns(pl.col("medium_name").cast(pl.Enum(media_names)))
+            .sort("medium_name")
+    )
+    
+    reg_plot = plot.titer_regression(
+        titers,
+        hls_reg,
+        facet = {
+            "col": "medium_name",
+            "row": "temperature_celsius",
+            "sharex": True,
+            "sharey": True,
+            "label_cols": False,
+            "label_rows": False,
+        },
+    )
+
+    fig, ax = plt.subplots(
+        2, 2, figsize=[16, 8], sharex='all', sharey='all'
+    )
+
+    reg_plot.render(fig=fig, ax=ax) 
+    fig.supxlabel(None)
+    fig.supylabel(None)
+
+    
+    ax[0,0].set_title("Raw milk")
+    ax[1,1].set_title("Wastewater")
+
+    ax[0,0].set_ylim([1e-1, 1e8])
+    
+    ax[1,0].set_xlabel("Time (days)", x=0.5)
+    ax[1,1].set_xlabel("Time (days)", x=0.5)
+
+    ax[0,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[1,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    legend_elements = [Line2D([0], [0], color='orange', lw=8, label='22C'),
+                   Line2D([0], [0], color='blue', lw = 8, label='4C')]
+
+    ax[0,1].legend(handles=legend_elements, loc='center', prop = {"size": 20})
+    ax[0,1].grid(visible = False, which = 'major', axis = 'both')
+
+    output_path = output_path + "-titers-liquid.pdf"
+    print(f"Saving figure to {output_path}...")
+    fig.savefig(output_path)
+
+def old_titers_surface_plot(
+        titers,
+        hls,
+        hls_reg,
+        output_path
+    ):
+    media_names = ["polypropylen", "steel", "rubber"]
+    
+    titers = (
+        titers.filter(pl.col("medium_name").is_in(media_names))
+            .with_columns(pl.col("medium_name").cast(pl.Enum(media_names)))
+            .sort("medium_name")
+    )
+
+    hls_reg = (
+        hls_reg.filter(pl.col("medium_name").is_in(media_names))
+            .with_columns(pl.col("medium_name").cast(pl.Enum(media_names)))
+            .sort("medium_name")
+    )
+
+    hls = (
+        hls.filter(pl.col("medium_name").is_in(media_names))
+            .with_columns(pl.col("medium_name").cast(pl.Enum(media_names)))
+            .sort("medium_name")
+    )
+    
+    reg_plot = plot.titer_regression(
+        titers,
+        hls_reg,
+        facet = {
+            "col": "medium_name",
+            "row": "temperature_celsius",
+            "sharex": True,
+            "sharey": True,
+            "label_cols": False,
+            "label_rows": False,
+        },
+    )
+
+    fig, ax = plt.subplots(
+        2, 3, figsize=[16, 8], sharex='all', sharey='all'
+    )
+
+    reg_plot.render(fig=fig, ax=ax) 
+    fig.supxlabel(None)
+    fig.supylabel(None)
+
+    ax[0,0].set_title("Polypropylene plastic")
+    ax[0,1].set_title("Steel")
+    ax[0,2].set_title("Rubber")
+
+    ax[0,0].set_ylim([1e-1, 1e8])
+    
+    ax[1,0].set_xlabel("Time (days)", x=0.5)
+    ax[1,1].set_xlabel("Time (days)", x=0.5)
+    ax[1,2].set_xlabel("Time (days)", x=0.5)
+
+    ax[0,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    ax[1,0].set_ylabel("Virus titer (TCID$_{50}$/mL)")
+    legend_elements = [Line2D([0], [0], color='orange', lw = 4, label='22C'),
+                   Line2D([0], [0], color='blue', lw = 4, label='4C')]
+
+    ax[0,2].legend(handles=legend_elements, loc='upper right', prop = {"size": 12})
+    # ax[0,2].grid(visible = False, which = 'major', axis = 'both')
+
+    output_path = output_path + "-titers-surface.pdf"
+    print(f"Saving figure to {output_path}...")
+    fig.savefig(output_path)
+
+def old_hl_plot(
+        hls,
+        output_path
+    ):
+    """
+    Generates and saves a violin plot of half-lives for the different conditions.
+    Parameters:
+    hls (DataFrame): DataFrame containing half-life data.
+    hl_model (Model): Model used for half-life calculations.
+    output_path (str): Path to save the generated plot.
+    Returns:
+    None
+    """
+    half_lives_ordering = ["polypropylen", "steel", "rubber", "raw", "wastewater"]
+    
+    hls = (
+        hls.filter(pl.col("medium_name").is_in(half_lives_ordering))
+            .with_columns(pl.col("medium_name").cast(pl.Enum(half_lives_ordering)))
+            .sort("medium_name")
+    )
+    
+    hl_violins = plot.halflife_violins(
+        hls,
+        x_column="medium_name",
+        halflife_column="halflife_days",
+        additional_mappings=dict(
+            fillcolor="temperature_celsius",
+            markerfacecolor="temperature_celsius",
+        ),
+        scales=dict(
+            fillcolor=plot.condition_color_scale,
+            markerfacecolor=plot.condition_color_scale,
+            x=ScaleXCategorical(),
+        ),
+        facet=dict(
+            sharex=False,
+            label_cols=False,
+            color="temperature_celsius"
+        ),
+        markeredgewidth=3,
+    )
+
+    fig, ax = plt.subplots(
+        1, 1, figsize = [12, 6], 
+        sharex = None, sharey = None
+        )
+    
+    hl_violins.render(fig=fig, ax=ax)
+    fig.supxlabel(None)
+    fig.supylabel(None)
+
+    title_hls = "Half-lives"
+    ax.set_title(title_hls)
+    
+    ax.set_ylim([0, 4.5])
+    ax.set_xlabel("Medium", x=0.5)
+
+    ax.set_xticks(
+        ticks = [0, 1, 2, 3, 4],
+        labels = ["PP", "Steel", "Rubber", "Raw milk", "Wastewater"]
+    )
+
+    ax.yaxis.set_major_formatter(ScalarFormatter())
+    ax.set_ylabel("Half-life (days)")
+
+    ax.grid(visible = True, which = 'major', axis = 'both')
+    legend_elements = [Line2D([0], [0], color='orange', lw=8, label='22C'),
+                   Line2D([0], [0], color='blue', lw = 8, label='4C')]
+
+    ax.legend(handles=legend_elements, loc='upper right', prop = {"size": 15})
+    
+    output_path = output_path + "-original-halflives.pdf"
+    print(f"Saving figure to {output_path}...")
+    fig.savefig(output_path)
 
 def bulk_milk_plot(
         titers,
