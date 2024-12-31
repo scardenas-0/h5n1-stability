@@ -126,7 +126,7 @@ def old_titers_liquid_plot(
     )
 
     fig, ax = plt.subplots(
-        2, 2, figsize=[16, 8], sharex='all', sharey='all'
+        2, 2, figsize=[11, 8], sharex='all', sharey='all'
     )
 
     reg_plot.render(fig=fig, ax=ax) 
@@ -282,7 +282,7 @@ def old_hl_plot(
 
     ax.set_xticks(
         ticks = [0, 1, 2, 3, 4],
-        labels = ["PP", "Steel", "Rubber", "Raw milk", "Wastewater"]
+        labels = ["Polypropylene", "Steel", "Rubber", "Raw milk", "Wastewater"]
     )
 
     ax.yaxis.set_major_formatter(ScalarFormatter())
